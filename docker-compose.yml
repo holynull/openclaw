@@ -95,8 +95,6 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    env_file:
-      - .env.softhsm
     environment:
       - HOST=0.0.0.0
       - PORT=3000
