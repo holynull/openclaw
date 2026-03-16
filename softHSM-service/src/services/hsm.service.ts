@@ -109,7 +109,8 @@ export class HSMService {
       logger.info('🔑 First-time initialization: Generating mnemonic...');
       
       const wallet = new EthWallet();
-      this.mnemonic = await wallet.generateMnemonic();
+      const mnemonicResult = await wallet.generateMnemonic();
+      this.mnemonic = typeof mnemonicResult === 'string' ? mnemonicResult : mnemonicResult.mnemonic;
 
       // 保存助记词到备份文件
       await this.saveMnemonicBackup(this.mnemonic);
@@ -139,7 +140,7 @@ export class HSMService {
       for (let i = 0; i < 3; i++) {
         const hdPath = `${config.mnemonic.hdPathPrefix}/${i}`;
         const privateKey = await wallet.getDerivedPrivateKey({ 
-          mnemonic: this.mnemonic, 
+          mnemonic: this.mnemonic!, 
           hdPath 
         });
         const account = await wallet.getNewAddress({ privateKey });
@@ -468,7 +469,7 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
       }
 
       // 尝试列出对象作为健康检查
-      this.session.find({ class: pkcs11.ObjectClass.PRIVATE_KEY }, { index: 0 });
+      this.session.find({ class: pkcs11.ObjectClass.PRIVATE_KEY });
       return true;
     } catch (error) {
       logger.error({ error }, 'HSM health check failed');

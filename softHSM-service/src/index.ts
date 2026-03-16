@@ -10,7 +10,7 @@ import { logger } from './utils/logger.js';
 import { HSMService } from './services/hsm.service.js';
 
 const fastify = Fastify({
-  logger: logger,
+  logger: true,
   requestIdLogLabel: 'requestId',
   disableRequestLogging: false,
 });

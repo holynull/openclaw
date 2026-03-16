@@ -156,7 +156,7 @@ export function rotateApiKey(
     'API key rotated'
   );
 
-  return newKey;
+  return { newApiKey: newKey.apiKey, newApiSecret: newKey.apiSecret, id: newKey.id };
 }
 
 /**
