@@ -120,6 +120,11 @@ export class HSMService {
       // 保存助记词到备份文件
       await this.saveMnemonicBackup(this.mnemonic);
 
+      // 🔑 立即导入第一个密钥到 HSM（防止重启后重新生成助记词）
+      logger.info('📥 Importing first key into HSM...');
+      await this.importKeyFromMnemonic(0, 'eth-key-0', this.mnemonic);
+      logger.info('✅ First key imported successfully');
+
       // 输出警告
       logger.warn('╔════════════════════════════════════════════════════════════════╗');
       logger.warn('║  🚨 IMPORTANT: BACKUP YOUR MNEMONIC PHRASE NOW! 🚨             ║');
