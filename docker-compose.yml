@@ -86,11 +86,12 @@ services:
     depends_on:
       - openclaw-gateway
 
-  softHSM-service:
+  softhsm-service:
     build:
       context: .
       dockerfile: Dockerfile.softHSM
-    container_name: wallet-softHSM-service
+    image: openclaw-softhsm:latest
+    container_name: wallet-softhsm-service
     restart: unless-stopped
     ports:
       - "3000:3000"
