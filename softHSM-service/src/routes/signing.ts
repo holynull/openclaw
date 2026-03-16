@@ -152,13 +152,13 @@ export async function signingRoutes(fastify: FastifyInstance) {
           value: body.value,
           transactionHash,
           requestId: request.id,
-          u更新每日统计
-        updateDailyStats((request.user as any)?.userId || 'unknown', body.value);
-
-        // ser: (request.user as any)?.userId || 'unknown',
+          user: (request.user as any)?.userId || 'unknown',
           timestamp: new Date().toISOString(),
           duration: Date.now() - startTime,
         });
+
+        // 更新每日统计
+        updateDailyStats((request.user as any)?.userId || 'unknown', body.value);
 
         // 派生地址（从公钥）
         // 注意：实际需要正确处理公钥格式
