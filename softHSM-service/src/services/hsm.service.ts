@@ -109,7 +109,12 @@ export class HSMService {
         if (mnemonic) {
           await this.importKeyFromMnemonic(0, 'eth-key-0', mnemonic);
           logger.info('✅ Keys restored from backup successfully');
-          logger.info('🔐 You can now safely delete the backup file after confirming it works');
+          logger.warn('');
+          logger.warn('🔐 BACKUP REMINDER: Mnemonic backup file still exists');
+          logger.warn('');
+          logger.warn('  To backup and delete securely, run:');
+          logger.warn('    docker exec -it wallet-softhsm-service sh /app/scripts/backup-mnemonic.sh');
+          logger.warn('');
         } else {
           logger.error('❌ Failed to load mnemonic from backup file');
         }
@@ -144,13 +149,16 @@ export class HSMService {
       logger.warn('Your mnemonic phrase has been saved to:');
       logger.warn(`  📄 ${path.resolve(config.mnemonic.backupPath)}`);
       logger.warn('');
-      logger.warn('⚠️  CRITICAL ACTIONS REQUIRED:');
-      logger.warn('  1. STOP THE SERVICE NOW');
-      logger.warn('  2. Open the backup file and WRITE DOWN the mnemonic on paper');
-      logger.warn('  3. Store the paper backup in a safe place (multiple locations)');
-      logger.warn('  4. VERIFY you have written it correctly');
-      logger.warn('  5. DELETE the backup file after confirming');
-      logger.warn('  6. Restart the service');
+      logger.warn('⚠️  CRITICAL ACTIONS:');
+      logger.warn('  RECOMMENDED: Use the interactive backup script');
+      logger.warn('');
+      logger.warn('  Execute in the container:');
+      logger.warn('    docker exec -it wallet-softhsm-service sh /app/scripts/backup-mnemonic.sh');
+      logger.warn('');
+      logger.warn('  OR manually:');
+      logger.warn('    1. View the backup file and WRITE DOWN the mnemonic on paper');
+      logger.warn('    2. Store the paper backup in multiple safe locations');
+      logger.warn('    3. DELETE the backup file: docker exec wallet-softhsm-service shred -u ' + config.mnemonic.backupPath);
       logger.warn('');
       logger.warn('⚠️  WARNING: Anyone with this mnemonic can control your assets!');
       logger.warn('⚠️  Losing this mnemonic means losing access to all keys!');
@@ -170,20 +178,10 @@ export class HSMService {
       }
       
       logger.warn('');
-      logger.warn('After backing up, delete the file:');
-      logger.warn(`  rm ${path.resolve(config.mnemonic.backupPath)}`);
-      logger.warn('');
       logger.warn('═══════════════════════════════════════════════════════════════');
-
-      // 暂停服务，等待用户备份
-      logger.error('🛑 SERVICE PAUSED - Waiting for mnemonic backup');
-      logger.error('🛑 Please backup the mnemonic and restart the service');
-      
-      // 退出进程，强制用户备份
-      setTimeout(() => {
-        logger.error('Exiting to ensure mnemonic backup...');
-        process.exit(0);
-      }, 5000);
+      logger.warn('');
+      logger.warn('🔐 Service is running. Please backup your mnemonic as soon as possible.');
+      logger.warn('');
       
     } catch (error) {
       logger.error({ error }, 'Error checking/generating mnemonic');
