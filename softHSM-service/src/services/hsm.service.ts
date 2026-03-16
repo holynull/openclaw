@@ -102,7 +102,18 @@ export class HSMService {
       const backupExists = await this.checkMnemonicBackupExists();
       if (backupExists) {
         logger.warn('⚠️  Mnemonic backup file exists but no keys in HSM');
-        logger.warn('⚠️  Please check if you need to restore from backup');
+        logger.info('📥 Restoring keys from backup file...');
+        
+        // 从备份文件加载助记词并导入密钥
+        const mnemonic = await this.loadMnemonicFromBackup();
+        if (mnemonic) {
+          await this.importKeyFromMnemonic(0, 'eth-key-0', mnemonic);
+          logger.info('✅ Keys restored from backup successfully');
+          logger.info('🔐 You can now safely delete the backup file after confirming it works');
+        } else {
+          logger.error('❌ Failed to load mnemonic from backup file');
+        }
+        
         return;
       }
 
