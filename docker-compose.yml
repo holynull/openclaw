@@ -112,9 +112,9 @@ services:
       - LOG_LEVEL=info
       # 助记词配置（首次初始化时自动生成）
       - HD_PATH_PREFIX=${HD_PATH_PREFIX:-m/44'/60'/0'/0}
-      - MNEMONIC_BACKUP_PATH=/app/mnemonic-backup.txt
+      - MNEMONIC_BACKUP_PATH=/var/lib/softhsm-wallet/mnemonic-backup.txt
     volumes:
-      # 持久化 HSM token 存储
+      # 持久化 HSM token 存储（包含助记词备份）
       - hsm-data:/var/lib/softhsm-wallet
       # 持久化审计日志
       - audit-logs:/var/log/softHSM-service
