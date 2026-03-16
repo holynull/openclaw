@@ -1,0 +1,64 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 安装 SoftHSM
+RUN apk add --no-cache \
+    softhsm \
+    openssl \
+    build-base \
+    python3
+
+# 复制依赖文件
+COPY softHSM-service/package.json softHSM-service/pnpm-lock.yaml* ./
+
+# 安装 pnpm
+RUN npm install -g pnpm
+
+# 安装依赖
+RUN pnpm install --frozen-lockfile
+
+# 复制源代码
+COPY softHSM-service/ .
+
+# 编译 TypeScript
+RUN pnpm build
+
+# 生产镜像
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 安装 SoftHSM 运行时
+RUN apk add --no-cache \
+    softhsm \
+    openssl
+
+# 复制 Node.js 依赖
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+
+# 创建 SoftHSM 目录
+RUN mkdir -p /var/lib/softhsm-wallet /var/log/softHSM-service
+
+# 创建 SoftHSM 配置
+RUN echo "directories.tokendir = /var/lib/softhsm-wallet" > /etc/softhsm2.conf && \
+    echo "objectstore.backend = file" >> /etc/softhsm2.conf && \
+    echo "log.level = INFO" >> /etc/softhsm2.conf
+
+# 创建非 root 用户
+RUN addgroup -g 1001 -S signing && \
+    adduser -S -D -H -u 1001 -h /app -s /sbin/nologin -G signing signing && \
+    chown -R signing:signing /app /var/lib/softhsm-wallet /var/log/softHSM-service
+
+USER signing
+
+ENV NODE_ENV=production
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health/ready || exit 1
+
+CMD ["node", "dist/index.js"]
