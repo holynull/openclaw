@@ -1,0 +1,22 @@
+{
+  "name": "@openclaw/wallet-manager",
+  "version": "1.1.0",
+  "description": "Multi-chain wallet manager using OKX js-wallet-sdk with Infura support",
+  "type": "module",
+  "dependencies": {
+    "@okxweb3/coin-aptos": "^2.0.0",
+    "@okxweb3/coin-base": "^2.0.0",
+    "@okxweb3/coin-bitcoin": "^2.0.0",
+    "@okxweb3/coin-cosmos": "^2.0.0",
+    "@okxweb3/coin-ethereum": "^2.0.0",
+    "@okxweb3/coin-solana": "^2.0.0",
+    "@okxweb3/crypto-lib": "^2.0.0",
+    "@sinclair/typebox": "^0.34.48",
+    "ethers": "^6.13.0"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

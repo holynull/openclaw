@@ -1,0 +1,10 @@
+{
+  "id": "wallet-manager",
+  "name": "Wallet Manager",
+  "description": "Multi-chain wallet management using OKX SDK",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
