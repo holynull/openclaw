@@ -378,9 +378,13 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
         throw new Error('Failed to derive private key from mnemonic');
       }
 
+      logger.info('✓ Private key derived successfully');
+
       // 移除 '0x' 前缀（如果有）
       const privateKeyHex = derivedKey.startsWith('0x') ? derivedKey.slice(2) : derivedKey;
       const privateKeyBuffer = Buffer.from(privateKeyHex, 'hex');
+
+      logger.info({ keyLabel, bufferLength: privateKeyBuffer.length }, 'Importing key to HSM...');
 
       // ⚠️ 注意：这里我们使用对称密钥导入方式作为简化
       // 生产环境建议使用更安全的密钥包装方式
@@ -398,6 +402,8 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
         id: Buffer.from(keyLabel),
         value: privateKeyBuffer,
       });
+
+      logger.info('✓ Key imported to HSM');
 
       // 计算公钥（用于返回地址）
       const account = await wallet.getNewAddress({
@@ -418,7 +424,12 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
         keyHandle: importedKey,
       };
     } catch (error) {
-      logger.error({ error, accountIndex }, 'Error importing key from mnemonic');
+      logger.error({ 
+        error, 
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        accountIndex 
+      }, 'Error importing key from mnemonic');
       throw error;
     }
   }
