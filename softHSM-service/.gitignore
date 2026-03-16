@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.log
+.env
+.env.local
+credentials.txt
+logs/
+*.pem
+*.key
+*.crt
+.DS_Store
+
+# 助记词备份文件（绝不应提交！）
+mnemonic-backup.txt
+**/mnemonic-backup*.txt
+*mnemonic*.txt
+backup.txt
