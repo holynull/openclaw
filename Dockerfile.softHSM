@@ -12,6 +12,9 @@ RUN apk add --no-cache \
 # 复制依赖文件
 COPY softHSM-service/package.json softHSM-service/pnpm-lock.yaml* ./
 
+# 安装 patch-package（某些依赖需要）
+RUN npm install -g patch-package
+
 # 安装依赖（使用npm以确保原生模块正确构建）
 RUN npm install --production=false --legacy-peer-deps
 
