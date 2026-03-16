@@ -44,8 +44,8 @@ echo "${GREEN}║                   🔑 助记词 (Mnemonic)                   
 echo "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# 提取助记词（在两个分隔线之间）
-MNEMONIC=$(grep -A 2 "MNEMONIC PHRASE:" "$BACKUP_FILE" | tail -1 | xargs)
+# 提取助记词（直接找以小写字母开头的行）
+MNEMONIC=$(grep "^[a-z]" "$BACKUP_FILE" | head -1)
 
 if [ -z "$MNEMONIC" ]; then
     echo "${RED}❌ 错误: 无法从备份文件中提取助记词${NC}"
