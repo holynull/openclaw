@@ -142,13 +142,14 @@ export class HSMService {
       logger.warn('Derived addresses (for verification):');
       
       // 显示前3个派生的地址
+      const ethWallet = new EthWallet();
       for (let i = 0; i < 3; i++) {
         const hdPath = `${config.mnemonic.hdPathPrefix}/${i}`;
-        const privateKey = await wallet.getDerivedPrivateKey({ 
+        const privateKey = await ethWallet.getDerivedPrivateKey({ 
           mnemonic: this.mnemonic!, 
           hdPath 
         });
-        const account = await wallet.getNewAddress({ privateKey });
+        const account = await ethWallet.getNewAddress({ privateKey });
         logger.warn(`  [${i}] ${account.address}`);
       }
       
