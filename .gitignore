@@ -98,7 +98,6 @@ USER.md
 /local/
 package-lock.json
 .claude/
-.openclaw/
 .agents/
 .agents
 .agent/
