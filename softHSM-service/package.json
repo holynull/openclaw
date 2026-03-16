@@ -9,7 +9,10 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "vitest",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "mnemonic": "tsx scripts/mnemonic-manager.ts",
+    "mnemonic:generate": "tsx scripts/mnemonic-manager.ts",
+    "mnemonic:verify": "tsx scripts/mnemonic-manager.ts"
   },
   "dependencies": {
     "fastify": "^4.26.0",

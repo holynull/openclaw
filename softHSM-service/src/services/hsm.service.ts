@@ -2,9 +2,11 @@ import * as pkcs11 from 'graphene-pk11';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
 import crypto from 'crypto';
+import { EthWallet } from '@okxweb3/coin-ethereum';
 
 /**
  * HSM Service - 管理与 SoftHSM 的 PKCS#11 交互
+ * 支持从助记词派生密钥
  */
 export class HSMService {
   private static instance: HSMService;
@@ -74,6 +76,7 @@ export class HSMService {
 
   /**
    * 获取或生成以太坊密钥对
+   * 如果配置了助记词，将从助记词派生私钥并导入到 HSM
    */
   async getOrCreateEthereumKey(accountIndex: number): Promise<{
     publicKey: Buffer;
@@ -108,7 +111,13 @@ export class HSMService {
         };
       }
 
-      // 生成新密钥对（ECDSA secp256k1 - 以太坊使用的曲线）
+      // 如果配置了助记词，从助记词派生密钥
+      if (config.mnemonic.seed) {
+        logger.info({ keyLabel }, 'Deriving key from mnemonic');
+        return await this.importKeyFromMnemonic(accountIndex, keyLabel);
+      }
+
+      // 否则生成新密钥对（ECDSA secp256k1 - 以太坊使用的曲线）
       logger.info({ keyLabel }, 'Generating new key pair');
       
       // 注意：SoftHSM 可能不支持 secp256k1，需要检查
@@ -142,6 +151,74 @@ export class HSMService {
       };
     } catch (error) {
       logger.error({ error, keyLabel }, 'Error managing Ethereum key');
+      throw error;
+    }
+  }
+
+  /**
+   * 从助记词派生私钥并导入到 HSM
+   */
+  private async importKeyFromMnemonic(
+    accountIndex: number,
+    keyLabel: string
+  ): Promise<{ publicKey: Buffer; keyHandle: pkcs11.Key }> {
+    try {
+      const wallet = new EthWallet();
+      const hdPath = `${config.mnemonic.hdPathPrefix}/${accountIndex}`;
+      
+      logger.info({ accountIndex, hdPath }, 'Deriving private key from mnemonic');
+      
+      // 从助记词派生私钥
+      const derivedKey = await wallet.getDerivedPrivateKey({
+        mnemonic: config.mnemonic.seed,
+        hdPath,
+      });
+
+      if (!derivedKey) {
+        throw new Error('Failed to derive private key from mnemonic');
+      }
+
+      // 移除 '0x' 前缀（如果有）
+      const privateKeyHex = derivedKey.startsWith('0x') ? derivedKey.slice(2) : derivedKey;
+      const privateKeyBuffer = Buffer.from(privateKeyHex, 'hex');
+
+      // ⚠️ 注意：这里我们使用对称密钥导入方式作为简化
+      // 生产环境建议使用更安全的密钥包装方式
+      
+      // 将私钥导入为 HSM 中的密钥对象
+      // 由于 PKCS#11 限制，我们将私钥存储为 SECRET_KEY
+      const importedKey = this.session!.createObject({
+        class: pkcs11.ObjectClass.SECRET_KEY,
+        keyType: pkcs11.KeyType.GENERIC_SECRET,
+        token: true,
+        private: true,
+        sensitive: true,
+        extractable: false, // 不可导出
+        label: keyLabel,
+        id: Buffer.from(keyLabel),
+        value: privateKeyBuffer,
+      });
+
+      // 计算公钥（用于返回地址）
+      const account = await wallet.getNewAddress({
+        privateKey: derivedKey,
+      });
+
+      // 从地址反推公钥（简化处理）
+      // 注意：实际应该从私钥直接计算公钥
+      const publicKeyBuffer = Buffer.from(account.publicKey.slice(2), 'hex');
+
+      logger.info({ keyLabel, address: account.address }, 'Key imported from mnemonic successfully');
+
+      // 清除内存中的私钥
+      privateKeyBuffer.fill(0);
+
+      return {
+        publicKey: publicKeyBuffer,
+        keyHandle: importedKey,
+      };
+    } catch (error) {
+      logger.error({ error, accountIndex }, 'Error importing key from mnemonic');
       throw error;
     }
   }

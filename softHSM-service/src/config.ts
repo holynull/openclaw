@@ -32,6 +32,14 @@ export const config = {
     enabled: process.env.AUDIT_ENABLED === 'true',
     logPath: process.env.AUDIT_LOG_PATH || './logs/audit.log',
   },
+
+  // 助记词配置（可选，用于密钥恢复）
+  mnemonic: {
+    // 如果提供了助记词，将从助记词派生密钥导入到 HSM
+    seed: process.env.WALLET_MNEMONIC || '',
+    // HD 钱包路径前缀 (BIP44: m/44'/60'/0'/0/{index})
+    hdPathPrefix: process.env.HD_PATH_PREFIX || "m/44'/60'/0'/0",
+  },
 };
 
 // 验证必需的环境变量

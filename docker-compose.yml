@@ -109,6 +109,9 @@ services:
       - AUDIT_ENABLED=true
       - AUDIT_LOG_PATH=/var/log/softHSM-service/audit.log
       - LOG_LEVEL=info
+      # 助记词配置（可选，用于密钥恢复）
+      - WALLET_MNEMONIC=${WALLET_MNEMONIC:-}
+      - HD_PATH_PREFIX=${HD_PATH_PREFIX:-m/44'/60'/0'/0}
     volumes:
       # 持久化 HSM token 存储
       - hsm-data:/var/lib/softhsm-wallet
