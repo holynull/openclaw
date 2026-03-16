@@ -140,6 +140,8 @@ services:
 
 volumes:
   hsm-data:
-    driver: local
+    external: true
+    name: softhsm-data
   audit-logs:
-    driver: local
+    external: true
+    name: softhsm-logs
