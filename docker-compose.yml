@@ -118,10 +118,6 @@ services:
       - hsm-data:/var/lib/softhsm-wallet
       # 持久化审计日志
       - audit-logs:/var/log/softHSM-service
-      # SoftHSM 配置
-      - ./softHSM-service/softhsm2.conf:/etc/softhsm2.conf:ro
-      # 助记词备份文件（首次初始化后需手动删除）
-      - ./softHSM-service:/app:rw
     healthcheck:
       test:
         [
