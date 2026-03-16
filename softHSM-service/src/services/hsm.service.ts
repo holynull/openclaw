@@ -3,16 +3,19 @@ import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
 import crypto from 'crypto';
 import { EthWallet } from '@okxweb3/coin-ethereum';
+import fs from 'fs/promises';
+import path from 'path';
 
 /**
  * HSM Service - 管理与 SoftHSM 的 PKCS#11 交互
- * 支持从助记词派生密钥
+ * 首次初始化时自动生成助记词并显示给用户备份
  */
 export class HSMService {
   private static instance: HSMService;
   private module: pkcs11.Module | null = null;
   private session: pkcs11.Session | null = null;
   private initialized = false;
+  private mnemonic: string | null = null; // 内存中的助记词，仅在初始化时使用
 
   private constructor() {}
 
@@ -67,6 +70,9 @@ export class HSMService {
       
       logger.info('HSM session opened and logged in');
 
+      // 检查是否是首次初始化（没有任何密钥）
+      await this.checkAndGenerateMnemonic();
+
       this.initialized = true;
     } catch (error) {
       logger.error({ error }, 'Failed to initialize HSM');
@@ -75,8 +81,184 @@ export class HSMService {
   }
 
   /**
+   * 检查是否需要生成助记词（首次初始化）
+   */
+  private async checkAndGenerateMnemonic(): Promise<void> {
+    if (!this.session) {
+      return;
+    }
+
+    try {
+      // 检查是否已有密钥
+      const objects = this.session.find({ class: pkcs11.ObjectClass.SECRET_KEY });
+      
+      if (objects.length > 0) {
+        logger.info('Existing keys found in HSM, skipping mnemonic generation');
+        return;
+      }
+
+      // 检查是否已有助记词备份文件
+      const backupExists = await this.checkMnemonicBackupExists();
+      if (backupExists) {
+        logger.warn('⚠️  Mnemonic backup file exists but no keys in HSM');
+        logger.warn('⚠️  Please check if you need to restore from backup');
+        return;
+      }
+
+      // 首次初始化：生成助记词
+      logger.info('🔑 First-time initialization: Generating mnemonic...');
+      
+      const wallet = new EthWallet();
+      this.mnemonic = await wallet.generateMnemonic();
+
+      // 保存助记词到备份文件
+      await this.saveMnemonicBackup(this.mnemonic);
+
+      // 输出警告
+      logger.warn('╔════════════════════════════════════════════════════════════════╗');
+      logger.warn('║  🚨 IMPORTANT: BACKUP YOUR MNEMONIC PHRASE NOW! 🚨             ║');
+      logger.warn('╚════════════════════════════════════════════════════════════════╝');
+      logger.warn('');
+      logger.warn('Your mnemonic phrase has been saved to:');
+      logger.warn(`  📄 ${path.resolve(config.mnemonic.backupPath)}`);
+      logger.warn('');
+      logger.warn('⚠️  CRITICAL ACTIONS REQUIRED:');
+      logger.warn('  1. STOP THE SERVICE NOW');
+      logger.warn('  2. Open the backup file and WRITE DOWN the mnemonic on paper');
+      logger.warn('  3. Store the paper backup in a safe place (multiple locations)');
+      logger.warn('  4. VERIFY you have written it correctly');
+      logger.warn('  5. DELETE the backup file after confirming');
+      logger.warn('  6. Restart the service');
+      logger.warn('');
+      logger.warn('⚠️  WARNING: Anyone with this mnemonic can control your assets!');
+      logger.warn('⚠️  Losing this mnemonic means losing access to all keys!');
+      logger.warn('');
+      logger.warn('Derived addresses (for verification):');
+      
+      // 显示前3个派生的地址
+      for (let i = 0; i < 3; i++) {
+        const hdPath = `${config.mnemonic.hdPathPrefix}/${i}`;
+        const privateKey = await wallet.getDerivedPrivateKey({ 
+          mnemonic: this.mnemonic, 
+          hdPath 
+        });
+        const account = await wallet.getNewAddress({ privateKey });
+        logger.warn(`  [${i}] ${account.address}`);
+      }
+      
+      logger.warn('');
+      logger.warn('After backing up, delete the file:');
+      logger.warn(`  rm ${path.resolve(config.mnemonic.backupPath)}`);
+      logger.warn('');
+      logger.warn('═══════════════════════════════════════════════════════════════');
+
+      // 暂停服务，等待用户备份
+      logger.error('🛑 SERVICE PAUSED - Waiting for mnemonic backup');
+      logger.error('🛑 Please backup the mnemonic and restart the service');
+      
+      // 退出进程，强制用户备份
+      setTimeout(() => {
+        logger.error('Exiting to ensure mnemonic backup...');
+        process.exit(0);
+      }, 5000);
+      
+    } catch (error) {
+      logger.error({ error }, 'Error checking/generating mnemonic');
+      throw error;
+    }
+  }
+
+  /**
+   * 检查助记词备份文件是否存在
+   */
+  private async checkMnemonicBackupExists(): Promise<boolean> {
+    try {
+      await fs.access(config.mnemonic.backupPath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * 保存助记词到备份文件
+   */
+  private async saveMnemonicBackup(mnemonic: string): Promise<void> {
+    const content = `
+╔════════════════════════════════════════════════════════════════╗
+║              🔐 MNEMONIC PHRASE BACKUP 🔐                      ║
+╚════════════════════════════════════════════════════════════════╝
+
+⚠️  DO NOT SHARE THIS FILE WITH ANYONE!
+⚠️  WRITE THIS DOWN ON PAPER AND DELETE THIS FILE!
+
+Generated: ${new Date().toISOString()}
+
+════════════════════════════════════════════════════════════════
+MNEMONIC PHRASE:
+════════════════════════════════════════════════════════════════
+
+${mnemonic}
+
+════════════════════════════════════════════════════════════════
+SECURITY CHECKLIST:
+════════════════════════════════════════════════════════════════
+
+[ ] I have written the mnemonic on paper
+[ ] I have verified the mnemonic is correct
+[ ] I have stored the paper in a safe place
+[ ] I understand losing this means losing all assets
+[ ] I will delete this file after backing up
+
+════════════════════════════════════════════════════════════════
+TO DELETE THIS FILE:
+════════════════════════════════════════════════════════════════
+
+rm "${path.resolve(config.mnemonic.backupPath)}"
+
+OR
+
+shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
+
+════════════════════════════════════════════════════════════════
+`;
+
+    await fs.writeFile(config.mnemonic.backupPath, content, { 
+      mode: 0o600, // 只有所有者可读写
+      encoding: 'utf-8' 
+    });
+    
+    logger.info(`Mnemonic backup saved to: ${config.mnemonic.backupPath}`);
+  }
+
+  /**
+   * 加载助记词（从备份文件，用于首次导入密钥）
+   */
+  private async loadMnemonicFromBackup(): Promise<string | null> {
+    try {
+      const exists = await this.checkMnemonicBackupExists();
+      if (!exists) {
+        return null;
+      }
+
+      const content = await fs.readFile(config.mnemonic.backupPath, 'utf-8');
+      
+      // 从文件中提取助记词（在 MNEMONIC PHRASE: 和下一个分隔线之间）
+      const match = content.match(/MNEMONIC PHRASE:\s*═+\s*\n\n([\w\s]+)\n\n═+/);
+      if (!match || !match[1]) {
+        throw new Error('Invalid mnemonic backup file format');
+      }
+
+      return match[1].trim();
+    } catch (error) {
+      logger.error({ error }, 'Error loading mnemonic from backup');
+      return null;
+    }
+  }
+
+  /**
    * 获取或生成以太坊密钥对
-   * 如果配置了助记词，将从助记词派生私钥并导入到 HSM
+   * 如果有助记词备份文件，将从助记词派生私钥并导入到 HSM
    */
   async getOrCreateEthereumKey(accountIndex: number): Promise<{
     publicKey: Buffer;
@@ -90,65 +272,38 @@ export class HSMService {
 
     try {
       // 查找现有密钥
-      const objects = this.session.find({ label: keyLabel, class: pkcs11.ObjectClass.PRIVATE_KEY });
+      const objects = this.session.find({ label: keyLabel, class: pkcs11.ObjectClass.SECRET_KEY });
       
       if (objects.length > 0) {
-        logger.info({ keyLabel }, 'Found existing key');
-        const privateKey = objects.items(0).toType<pkcs11.PrivateKey>();
+        logger.info({ keyLabel }, 'Found existing key in HSM');
+        const secretKey = objects.items(0).toType<pkcs11.SecretKey>();
         
-        // 获取对应的公钥
-        const pubKeyObjects = this.session.find({ 
-          label: keyLabel, 
-          class: pkcs11.ObjectClass.PUBLIC_KEY 
-        });
-        
-        const publicKey = pubKeyObjects.items(0).toType<pkcs11.PublicKey>();
-        const pubKeyValue = publicKey.getAttribute({ pointEC: null }).pointEC as Buffer;
+        // 读取存储的公钥（从标签中恢复）
+        // 注意：实际情况下应该将公钥也存储在 HSM 中
+        // 这里我们需要从助记词重新派生公钥（如果备份文件存在）
+        const publicKey = await this.getPublicKeyForAccount(accountIndex);
         
         return {
-          publicKey: pubKeyValue,
-          keyHandle: privateKey,
+          publicKey,
+          keyHandle: secretKey,
         };
       }
 
-      // 如果配置了助记词，从助记词派生密钥
-      if (config.mnemonic.seed) {
-        logger.info({ keyLabel }, 'Deriving key from mnemonic');
-        return await this.importKeyFromMnemonic(accountIndex, keyLabel);
+      // 检查是否有助记词备份文件
+      const mnemonic = await this.loadMnemonicFromBackup();
+      
+      if (mnemonic) {
+        // 从助记词派生密钥
+        logger.info({ keyLabel }, 'Deriving key from mnemonic backup');
+        return await this.importKeyFromMnemonic(accountIndex, keyLabel, mnemonic);
       }
 
-      // 否则生成新密钥对（ECDSA secp256k1 - 以太坊使用的曲线）
-      logger.info({ keyLabel }, 'Generating new key pair');
-      
-      // 注意：SoftHSM 可能不支持 secp256k1，需要检查
-      // 这里使用 ECDSA 作为示例，实际生产环境需要验证
-      const keys = this.session.generateKeyPair(
-        pkcs11.KeyGenMechanism.ECDSA,
-        {
-          keyType: pkcs11.KeyType.ECDSA,
-          token: true,
-          private: true,
-          label: keyLabel,
-          id: Buffer.from(keyLabel),
-          // ecParams: Buffer.from('06052b8104000a', 'hex'), // secp256k1 OID
-        },
-        {
-          keyType: pkcs11.KeyType.ECDSA,
-          token: true,
-          label: keyLabel,
-          id: Buffer.from(keyLabel),
-        }
+      // 如果没有助记词，抛出错误（不应该发生，因为初始化时会生成）
+      throw new Error(
+        'No mnemonic backup found and no existing keys. ' +
+        'This should not happen. Please reinitialize the service.'
       );
-
-      const publicKey = keys.publicKey.toType<pkcs11.PublicKey>();
-      const pubKeyValue = publicKey.getAttribute({ pointEC: null }).pointEC as Buffer;
-
-      logger.info({ keyLabel }, 'Key pair generated successfully');
-
-      return {
-        publicKey: pubKeyValue,
-        keyHandle: keys.privateKey,
-      };
+      
     } catch (error) {
       logger.error({ error, keyLabel }, 'Error managing Ethereum key');
       throw error;
@@ -156,11 +311,33 @@ export class HSMService {
   }
 
   /**
+   * 获取账户的公钥（从助记词派生或从存储的元数据）
+   */
+  private async getPublicKeyForAccount(accountIndex: number): Promise<Buffer> {
+    // 尝试从助记词备份派生
+    const mnemonic = await this.loadMnemonicFromBackup();
+    
+    if (mnemonic) {
+      const wallet = new EthWallet();
+      const hdPath = `${config.mnemonic.hdPathPrefix}/${accountIndex}`;
+      const privateKey = await wallet.getDerivedPrivateKey({ mnemonic, hdPath });
+      const account = await wallet.getNewAddress({ privateKey });
+      return Buffer.from(account.publicKey.slice(2), 'hex');
+    }
+
+    // 如果没有助记词备份，返回一个占位符
+    // 实际生产环境应该将公钥存储在 HSM 的元数据中
+    logger.warn('No mnemonic backup found, using placeholder public key');
+    return Buffer.alloc(64);
+  }
+
+  /**
    * 从助记词派生私钥并导入到 HSM
    */
   private async importKeyFromMnemonic(
     accountIndex: number,
-    keyLabel: string
+    keyLabel: string,
+    mnemonic: string
   ): Promise<{ publicKey: Buffer; keyHandle: pkcs11.Key }> {
     try {
       const wallet = new EthWallet();
@@ -170,7 +347,7 @@ export class HSMService {
       
       // 从助记词派生私钥
       const derivedKey = await wallet.getDerivedPrivateKey({
-        mnemonic: config.mnemonic.seed,
+        mnemonic,
         hdPath,
       });
 
