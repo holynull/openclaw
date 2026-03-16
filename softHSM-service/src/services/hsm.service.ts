@@ -3,6 +3,7 @@ import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
 import crypto from 'crypto';
 import { EthWallet } from '@okxweb3/coin-ethereum';
+import { Wallet } from 'ethers';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -108,9 +109,13 @@ export class HSMService {
       // 首次初始化：生成助记词
       logger.info('🔑 First-time initialization: Generating mnemonic...');
       
-      const wallet = new EthWallet();
-      const mnemonicResult = await wallet.generateMnemonic();
-      this.mnemonic = typeof mnemonicResult === 'string' ? mnemonicResult : mnemonicResult.mnemonic;
+      // 使用 ethers 生成助记词（更可靠）
+      const ethersWallet = Wallet.createRandom();
+      this.mnemonic = ethersWallet.mnemonic?.phrase || '';
+      
+      if (!this.mnemonic) {
+        throw new Error('Failed to generate mnemonic');
+      }
 
       // 保存助记词到备份文件
       await this.saveMnemonicBackup(this.mnemonic);
@@ -365,7 +370,7 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
       
       // 将私钥导入为 HSM 中的密钥对象
       // 由于 PKCS#11 限制，我们将私钥存储为 SECRET_KEY
-      const importedKey = this.session!.createObject({
+      const importedKey = (this.session as any).createObject({
         class: pkcs11.ObjectClass.SECRET_KEY,
         keyType: pkcs11.KeyType.GENERIC_SECRET,
         token: true,

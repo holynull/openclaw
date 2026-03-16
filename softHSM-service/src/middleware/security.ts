@@ -136,7 +136,7 @@ export async function requestSignatureMiddleware(
  * 交易安全检查中间件
  */
 export async function transactionSecurityMiddleware(
-  request: FastifyRequest<{ Body: { to: string; value: string; chainId: string; [key: string]: any } }>,
+  request: FastifyRequest<{ Body: { to: string; value: string; chainId: number; [key: string]: any } }>,
   reply: FastifyReply
 ) {
   const { to, value, chainId } = request.body;
