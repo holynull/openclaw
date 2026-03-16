@@ -391,7 +391,7 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
       
       // 将私钥导入为 HSM 中的密钥对象
       // 由于 PKCS#11 限制，我们将私钥存储为 SECRET_KEY
-      const importedKey = (this.session as any).createObject({
+      const importedKey = this.session!.create({
         class: pkcs11.ObjectClass.SECRET_KEY,
         keyType: pkcs11.KeyType.GENERIC_SECRET,
         token: true,
@@ -401,7 +401,7 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
         label: keyLabel,
         id: Buffer.from(keyLabel),
         value: privateKeyBuffer,
-      });
+      }).toType<pkcs11.SecretKey>();
 
       logger.info('✓ Key imported to HSM');
 
