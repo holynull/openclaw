@@ -1,7 +1,7 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.3.8-beta.1",
-    "lastTouchedAt": "2026-03-10T05:00:21.653Z"
+    "lastTouchedVersion": "2026.3.14",
+    "lastTouchedAt": "2026-03-17T03:58:38.368Z"
   },
   "wizard": {
     "lastRunAt": "2026-03-10T01:03:22.604Z",
@@ -152,14 +152,32 @@
     }
   },
   "agents": {
+    "defaults": {
+      "model": {
+        "primary": "maynor1024-anthropic/claude-sonnet-4-6"
+      },
+      "models": {
+        "gptsapi/claude-sonnet-4-6": {},
+        "maynor1024-anthropic/claude-sonnet-4-6": {},
+        "maynor1024-anthropic/claude-sonnet-4-5-20250929": {},
+        "maynor1024-openai/gpt-4o": {},
+        "maynor1024-openai/claude-sonnet-4-5-20250929": {}
+      },
+      "workspace": "/home/node/.openclaw/workspace"
+    },
     "list": [
       {
         "id": "main",
         "name": "Main Agent",
+        "workspace": "/home/node/.openclaw/workspace/main",
         "model": {
           "primary": "maynor1024-anthropic/claude-sonnet-4-6"
         },
-        "workspace": "/home/node/.openclaw/workspace/main",
+        "subagents": {
+          "allowAgents": [
+            "wallet-custody"
+          ]
+        },
         "tools": {
           "profile": "full",
           "alsoAllow": [
@@ -176,18 +194,15 @@
             "btc_get_address",
             "sol_get_address"
           ]
-        },
-        "subagents": {
-          "allowAgents": ["wallet-custody"]
         }
       },
       {
         "id": "wallet-custody",
         "name": "Wallet Custody Agent",
+        "workspace": "/home/node/.openclaw/workspace/wallet-custody",
         "model": {
           "primary": "maynor1024-anthropic/claude-sonnet-4-6"
         },
-        "workspace": "/home/node/.openclaw/workspace/wallet-custody",
         "tools": {
           "profile": "minimal",
           "allow": [
@@ -202,20 +217,7 @@
           ]
         }
       }
-    ],
-    "defaults": {
-      "model": {
-        "primary": "maynor1024-anthropic/claude-sonnet-4-6"
-      },
-      "models": {
-        "gptsapi/claude-sonnet-4-6": {},
-        "maynor1024-anthropic/claude-sonnet-4-6": {},
-        "maynor1024-anthropic/claude-sonnet-4-5-20250929": {},
-        "maynor1024-openai/gpt-4o": {},
-        "maynor1024-openai/claude-sonnet-4-5-20250929": {}
-      },
-      "workspace": "/home/node/.openclaw/workspace"
-    }
+    ]
   },
   "tools": {
     "profile": "full",
@@ -230,6 +232,15 @@
       "sol_get_address"
     ]
   },
+  "bindings": [
+    {
+      "agentId": "main",
+      "match": {
+        "channel": "feishu",
+        "accountId": "default"
+      }
+    }
+  ],
   "commands": {
     "native": "auto",
     "nativeSkills": "auto",
@@ -258,6 +269,14 @@
       "groupPolicy": "allowlist",
       "streaming": "partial",
       "linkPreview": true
+    },
+    "feishu": {
+      "enabled": true,
+      "appId": "${FEISHU_APP_ID}",
+      "appSecret": "${FEISHU_APP_SECRET}",
+      "connectionMode": "websocket",
+      "domain": "feishu",
+      "groupPolicy": "allowlist"
     }
   },
   "gateway": {
@@ -290,10 +309,14 @@
   "plugins": {
     "allow": [
       "wallet-manager",
-      "telegram"
+      "telegram",
+      "feishu"
     ],
     "entries": {
       "wallet-manager": {
+        "enabled": true
+      },
+      "feishu": {
         "enabled": true
       }
     }
