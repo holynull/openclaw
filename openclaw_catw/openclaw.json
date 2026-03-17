@@ -275,7 +275,7 @@
       "appId": "${FEISHU_APP_ID}",
       "appSecret": "${FEISHU_APP_SECRET}",
       "connectionMode": "websocket",
-      "domain": "feishu",
+      "domain": "lark",
       "groupPolicy": "allowlist"
     }
   },
