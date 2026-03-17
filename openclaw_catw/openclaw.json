@@ -276,7 +276,8 @@
       "appSecret": "${FEISHU_APP_SECRET}",
       "connectionMode": "websocket",
       "domain": "lark",
-      "groupPolicy": "allowlist"
+      "groupPolicy": "allowlist",
+			"botName": "Doraemon"
     }
   },
   "gateway": {
