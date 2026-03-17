@@ -309,7 +309,7 @@
           "requireMention": true
         }
       },
-      "groupPolicy": "allowlist",
+      "groupPolicy": "open",
       "streaming": "partial",
       "linkPreview": true
     },
@@ -319,7 +319,7 @@
       "appSecret": "${FEISHU_APP_SECRET}",
       "connectionMode": "websocket",
       "domain": "lark",
-      "groupPolicy": "allowlist",
+      "groupPolicy": "open",
 			"botName": "Doraemon"
     }
   },
