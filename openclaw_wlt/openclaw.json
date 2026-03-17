@@ -1,0 +1,301 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.3.8-beta.1",
+    "lastTouchedAt": "2026-03-10T05:00:21.653Z"
+  },
+  "wizard": {
+    "lastRunAt": "2026-03-10T01:03:22.604Z",
+    "lastRunVersion": "2026.3.8-beta.1",
+    "lastRunCommand": "onboard",
+    "lastRunMode": "local"
+  },
+  "auth": {
+    "profiles": {
+      "gptsapi:default": {
+        "provider": "gptsapi",
+        "mode": "api_key"
+      },
+      "maynor1024-anthropic:default": {
+        "provider": "maynor1024-anthropic",
+        "mode": "api_key"
+      },
+      "maynor1024-openai:default": {
+        "provider": "maynor1024-openai",
+        "mode": "api_key"
+      }
+    }
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "gptsapi": {
+        "baseUrl": "https://api.gptsapi.net/v1",
+        "apiKey": "${GPTSAPI_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "claude-sonnet-4-6",
+            "name": "Claude Sonnet 4.6 via gptsapi",
+            "reasoning": false,
+            "input": [
+              "text"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "gpt-4o",
+            "name": "GPT 4o via gptsapi",
+            "reasoning": false,
+            "input": [
+              "text"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 128000,
+            "maxTokens": 8192
+          }
+        ]
+      },
+      "maynor1024-anthropic": {
+        "baseUrl": "https://apipro.maynor1024.live/v1",
+        "apiKey": "${MAYNOR1024_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "claude-sonnet-4-6",
+            "name": "Claude Sonnet 4.6 via maynor1024",
+            "reasoning": false,
+            "input": [
+              "text",
+              "image"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "claude-sonnet-4-5-20250929",
+            "name": "Claude Sonnet 4.5 via maynor1024",
+            "reasoning": false,
+            "input": [
+              "text",
+              "image"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      },
+      "maynor1024-openai": {
+        "baseUrl": "https://apipro.maynor1024.live/v1",
+        "apiKey": "${MAYNOR1024_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "gpt-4o",
+            "name": "GPT 4o via maynor1024",
+            "reasoning": false,
+            "input": [
+              "text",
+              "image"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 128000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "claude-sonnet-4-5-20250929",
+            "name": "Claude Sonnet 4.5 via maynor1024-openai",
+            "reasoning": false,
+            "input": [
+              "text",
+              "image"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "list": [
+      {
+        "id": "main",
+        "name": "Main Agent",
+        "model": {
+          "primary": "maynor1024-anthropic/claude-sonnet-4-6"
+        },
+        "workspace": "/home/node/.openclaw/workspace/main",
+        "tools": {
+          "profile": "full",
+          "alsoAllow": [
+            "sessions_spawn",
+            "subagents"
+          ],
+          "deny": [
+            "eth_get_address",
+            "eth_get_balance",
+            "eth_get_token_balance",
+            "eth_transfer",
+            "eth_transfer_token",
+            "eth_sign_message",
+            "btc_get_address",
+            "sol_get_address"
+          ]
+        },
+        "subagents": {
+          "allowAgents": ["wallet-custody"]
+        }
+      },
+      {
+        "id": "wallet-custody",
+        "name": "Wallet Custody Agent",
+        "model": {
+          "primary": "maynor1024-anthropic/claude-sonnet-4-6"
+        },
+        "workspace": "/home/node/.openclaw/workspace/wallet-custody",
+        "tools": {
+          "profile": "minimal",
+          "allow": [
+            "eth_get_address",
+            "eth_get_balance",
+            "eth_get_token_balance",
+            "eth_transfer",
+            "eth_transfer_token",
+            "eth_sign_message",
+            "btc_get_address",
+            "sol_get_address"
+          ]
+        }
+      }
+    ],
+    "defaults": {
+      "model": {
+        "primary": "maynor1024-anthropic/claude-sonnet-4-6"
+      },
+      "models": {
+        "gptsapi/claude-sonnet-4-6": {},
+        "maynor1024-anthropic/claude-sonnet-4-6": {},
+        "maynor1024-anthropic/claude-sonnet-4-5-20250929": {},
+        "maynor1024-openai/gpt-4o": {},
+        "maynor1024-openai/claude-sonnet-4-5-20250929": {}
+      },
+      "workspace": "/home/node/.openclaw/workspace"
+    }
+  },
+  "tools": {
+    "profile": "full",
+    "alsoAllow": [
+      "eth_get_address",
+      "eth_get_balance",
+      "eth_get_token_balance",
+      "eth_transfer",
+      "eth_transfer_token",
+      "eth_sign_message",
+      "btc_get_address",
+      "sol_get_address"
+    ]
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "channels": {
+    "telegram": {
+      "capabilities": {
+        "inlineButtons": "allowlist"
+      },
+      "enabled": true,
+      "commands": {
+        "nativeSkills": true
+      },
+      "dmPolicy": "pairing",
+      "botToken": "${TELEGRAM_BOT_TOKEN}",
+      "groups": {
+        "*": {
+          "requireMention": true
+        }
+      },
+      "groupPolicy": "allowlist",
+      "streaming": "partial",
+      "linkPreview": true
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "controlUi": {
+      "dangerouslyAllowHostHeaderOriginFallback": true
+    },
+    "auth": {
+      "mode": "token",
+      "token": "afe168a64171cd2129f363e4002181d09b1b8d397b2e7861"
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "nodes": {
+      "denyCommands": [
+        "camera.snap",
+        "camera.clip",
+        "screen.record",
+        "contacts.add",
+        "calendar.add",
+        "reminders.add",
+        "sms.send"
+      ]
+    }
+  },
+  "plugins": {
+    "allow": [
+      "wallet-manager",
+      "telegram"
+    ],
+    "entries": {
+      "wallet-manager": {
+        "enabled": true
+      }
+    }
+  }
+}

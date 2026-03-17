@@ -257,7 +257,6 @@
       },
       "groupPolicy": "allowlist",
       "streaming": "partial",
-      "proxy": "http://192.168.5.2:7890",
       "linkPreview": true
     }
   },
