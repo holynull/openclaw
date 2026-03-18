@@ -14,11 +14,12 @@ Things like:
 
 ## Current Setup
 
-### Wallet Agent Delegation
+### Blockchain Query Tools
 
-- **Tool:** `sessions_spawn`
-- **Agent ID:** `wallet-custody`
-- **Security:** Always use `sandbox: "require"`
+- **Plugin:** `blockchain-tools`
+- **Skill Reference:** `skills/blockchain-query/SKILL.md`
+- **Supported Chains:** Ethereum, Bitcoin, Solana (and EVM-compatible chains)
+- **Note:** All tools are read-only queries
 
 ## Why Separate?
 

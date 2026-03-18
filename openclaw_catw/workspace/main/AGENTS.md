@@ -207,41 +207,47 @@ Think of it like a human reviewing their journal and updating their mental model
 
 The goal: Be helpful without being annoying. Check in a few times a day, do useful background work, but respect quiet time.
 
-## 🔐 Multi-Agent Collaboration: wallet-custody
+## � Blockchain Query Tools
 
-This workspace uses a specialized **wallet-custody** subagent for all cryptocurrency wallet operations. This separation ensures security and clear responsibility boundaries.
+This workspace has direct access to blockchain query tools for cryptocurrency data analysis.
 
-### When to Delegate to wallet-custody
+### Available Query Tools
 
-**ALWAYS use `sessions_spawn` for wallet operations:**
-- Address queries: "What's my Polygon address?"
-- Balance checks: "How much USDT do I have?"
-- Token queries: Any ERC20 token (USDT, USDC, DAI, LINK, etc.)
-- Transfers: "Send 10 USDT to..."
-- Multi-chain operations: Bitcoin, Solana, any EVM chain
+**Ethereum & EVM Chains:**
 
-### How to Delegate
+- `eth_get_balance` - Check ETH balance for any address
+- `eth_get_token_balance` - Query ERC20 token balances
+- `eth_estimate_gas` - Estimate gas fees for transactions
+- `eth_get_transaction` - Get transaction details by hash
 
-Use the `sessions_spawn` tool with agent `wallet-custody`:
+**Bitcoin:**
 
-```typescript
-sessions_spawn({
-  agent: "wallet-custody",
-  message: "Query USDT balance for address 0x... on Polygon",
-  sandbox: "require" // Always enforce sandbox for security
-})
-```
+- `btc_get_balance` - Check BTC balance for any address
+- `btc_get_transaction` - Get transaction details by txid
 
-**Reference:** See `skills/wallet-custody-sessions-spawn/SKILL.md` for detailed delegation patterns and examples.
+**Solana:**
 
-### Why Separate?
+- `sol_get_balance` - Check SOL balance for any address
+- `sol_get_token_balance` - Query SPL token balances
+- `sol_get_transaction` - Get transaction details by signature
 
-- **Security:** Wallet operations isolated from general tasks
-- **Clarity:** Clear audit trail for financial operations
-- **Expertise:** wallet-custody agent specialized for blockchain operations
-- **Safety:** Main agent explicitly denied direct wallet tool access
+### How to Use
 
-**Important:** If Eddie asks about wallet/crypto operations, don't say "I can't do that" — delegate to wallet-custody instead!
+**Reference:** See `skills/blockchain-query/SKILL.md` for detailed examples and parameters.
+
+**Key Points:**
+
+- All tools are **read-only** - no private keys or signing required
+- Specify required parameters like addresses and chain IDs
+- Use appropriate networks (mainnet/testnet) as needed
+- Tools work directly - no delegation needed
+
+**Common Use Cases:**
+
+- Balance checks: "Check ETH balance for 0x..."
+- Token queries: "How much USDT at address 0x... on Polygon?"
+- Transaction lookups: "Show details for transaction 0x..."
+- Gas estimation: "Estimate gas for transfer from 0x... to 0x..."
 
 ## Make It Yours
 

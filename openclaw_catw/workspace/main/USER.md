@@ -21,11 +21,17 @@ The Cat Wallet Development Team is focused on building innovative solutions for 
 - Integration with OpenClaw for agent-based wallet operations
 - Working with EVM chains (Polygon, Ethereum, Arbitrum, etc.)
 
-## Wallet Access
+## Blockchain Query Access
 
-The Cat Wallet Team has entrusted their multi-chain HD wallet mnemonic to the **wallet-custody** subagent for secure wallet operations. For ANY wallet-related queries (addresses, balances, transfers), Claw MUST delegate to the wallet-custody agent using `sessions_spawn` tool.
+The Cat Wallet Team uses blockchain query tools for monitoring and analyzing cryptocurrency data. For blockchain-related queries (addresses, balances, transactions), use the available blockchain query tools directly:
 
-**Never attempt wallet operations yourself** - always use sessions_spawn to delegate to wallet-custody.
+- **Ethereum & EVM chains**: eth_get_balance, eth_get_token_balance, eth_estimate_gas, eth_get_transaction
+- **Bitcoin**: btc_get_balance, btc_get_transaction
+- **Solana**: sol_get_balance, sol_get_token_balance, sol_get_transaction
+
+**Reference:** See `skills/blockchain-query/SKILL.md` for detailed tool usage and examples.
+
+**Note:** All tools are read-only and do not require private keys or signing operations.
 
 ---
 
