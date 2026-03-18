@@ -1,0 +1,10 @@
+{
+  "id": "blockchain-tools",
+  "name": "Blockchain Tools",
+  "description": "Multi-chain blockchain query tools for Ethereum, Bitcoin, and Solana",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

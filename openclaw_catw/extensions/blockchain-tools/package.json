@@ -1,7 +1,7 @@
 {
-  "name": "@openclaw/wallet-manager",
+  "name": "@openclaw/blockchain-tools",
   "version": "1.1.0",
-  "description": "Multi-chain wallet manager using OKX js-wallet-sdk with Infura support",
+  "description": "Multi-chain blockchain query tools for Ethereum, Bitcoin, and Solana",
   "type": "module",
   "dependencies": {
     "@okxweb3/coin-aptos": "^2.0.0",

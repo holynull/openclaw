@@ -220,17 +220,16 @@
           "profile": "full",
           "alsoAllow": [
             "sessions_spawn",
-            "subagents"
-          ],
-          "deny": [
-            "eth_get_address",
+            "subagents",
             "eth_get_balance",
             "eth_get_token_balance",
-            "eth_transfer",
-            "eth_transfer_token",
-            "eth_sign_message",
-            "btc_get_address",
-            "sol_get_address"
+            "eth_estimate_gas",
+            "eth_get_transaction",
+            "btc_get_balance",
+            "btc_get_transaction",
+            "sol_get_balance",
+            "sol_get_token_balance",
+            "sol_get_transaction"
           ]
         }
       }
@@ -239,14 +238,15 @@
   "tools": {
     "profile": "full",
     "alsoAllow": [
-      "eth_get_address",
       "eth_get_balance",
       "eth_get_token_balance",
-      "eth_transfer",
-      "eth_transfer_token",
-      "eth_sign_message",
-      "btc_get_address",
-      "sol_get_address"
+      "eth_estimate_gas",
+      "eth_get_transaction",
+      "btc_get_balance",
+      "btc_get_transaction",
+      "sol_get_balance",
+      "sol_get_token_balance",
+      "sol_get_transaction"
     ]
   },
   "bindings": [
@@ -326,12 +326,12 @@
   },
   "plugins": {
     "allow": [
-      "wallet-manager",
+      "blockchain-tools",
       "telegram",
       "feishu"
     ],
     "entries": {
-      "wallet-manager": {
+      "blockchain-tools": {
         "enabled": true
       },
       "feishu": {
