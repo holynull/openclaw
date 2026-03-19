@@ -332,24 +332,68 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
   }
 
   /**
-   * 获取账户的公钥（从助记词派生或从存储的元数据）
+   * 获取账户的公钥（优先从 HSM 读取，其次从助记词派生）
    */
   private async getPublicKeyForAccount(accountIndex: number): Promise<Buffer> {
-    // 尝试从助记词备份派生
+    if (!this.session) {
+      throw new Error('HSM not initialized');
+    }
+
+    const keyLabel = `eth-key-${accountIndex}`;
+    const publicKeyLabel = `${keyLabel}-public`;
+
+    // 1. 优先从 HSM 中读取存储的公钥
+    try {
+      const publicKeyObjects = this.session.find({ 
+        label: publicKeyLabel, 
+        class: pkcs11.ObjectClass.DATA 
+      });
+      
+      if (publicKeyObjects.length > 0) {
+        const dataObj = publicKeyObjects.items(0).toType<pkcs11.Data>();
+        const publicKeyBuffer = dataObj.value as Buffer;
+        logger.info({ publicKeyLabel }, '✓ Public key loaded from HSM');
+        return publicKeyBuffer;
+      }
+    } catch (error) {
+      logger.warn({ error, publicKeyLabel }, 'Failed to load public key from HSM');
+    }
+
+    // 2. 尝试从助记词备份派生（兼容旧数据）
     const mnemonic = await this.loadMnemonicFromBackup();
     
     if (mnemonic) {
+      logger.info({ accountIndex }, 'Deriving public key from mnemonic backup');
       const wallet = new EthWallet();
       const hdPath = `${config.mnemonic.hdPathPrefix}/${accountIndex}`;
       const privateKey = await wallet.getDerivedPrivateKey({ mnemonic, hdPath });
       const account = await wallet.getNewAddress({ privateKey });
-      return Buffer.from(account.publicKey.slice(2), 'hex');
+      const publicKeyBuffer = Buffer.from(account.publicKey.slice(2), 'hex');
+      
+      // 存储到 HSM 供下次使用
+      try {
+        this.session.create({
+          class: pkcs11.ObjectClass.DATA,
+          label: publicKeyLabel,
+          token: true,
+          private: false,
+          application: 'ethereum-public-key',
+          value: publicKeyBuffer,
+        });
+        logger.info({ publicKeyLabel }, '✓ Public key cached to HSM');
+      } catch (error) {
+        logger.warn({ error }, 'Failed to cache public key');
+      }
+      
+      return publicKeyBuffer;
     }
 
-    // 如果没有助记词备份，返回一个占位符
-    // 实际生产环境应该将公钥存储在 HSM 的元数据中
-    logger.warn('No mnemonic backup found, using placeholder public key');
-    return Buffer.alloc(64);
+    // 3. 无法获取公钥，抛出错误
+    throw new Error(
+      `Cannot retrieve public key for account ${accountIndex}: ` +
+      `No public key in HSM and no mnemonic backup found. ` +
+      `The key may need to be re-imported.`
+    );
   }
 
   /**
@@ -411,6 +455,22 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
       // 从地址反推公钥（简化处理）
       // 注意：实际应该从私钥直接计算公钥
       const publicKeyBuffer = Buffer.from(account.publicKey.slice(2), 'hex');
+
+      // 🔑 将公钥也存储到 HSM 中（持久化）
+      const publicKeyLabel = `${keyLabel}-public`;
+      try {
+        this.session!.create({
+          class: pkcs11.ObjectClass.DATA,
+          label: publicKeyLabel,
+          token: true, // 持久化
+          private: false,
+          application: 'ethereum-public-key',
+          value: publicKeyBuffer,
+        });
+        logger.info({ publicKeyLabel }, '✓ Public key stored in HSM');
+      } catch (error) {
+        logger.warn({ error, publicKeyLabel }, 'Failed to store public key in HSM (may already exist)');
+      }
 
       logger.info({ keyLabel, address: account.address }, 'Key imported from mnemonic successfully');
 
