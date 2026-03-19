@@ -113,7 +113,7 @@ export class HSMService {
           logger.warn('🔐 BACKUP REMINDER: Mnemonic backup file still exists');
           logger.warn('');
           logger.warn('  To backup and delete securely, run:');
-          logger.warn('    docker exec -it wallet-softhsm-service sh /app/scripts/backup-mnemonic.sh');
+          logger.warn('    docker exec -it softhsm-service sh /app/scripts/backup-mnemonic.sh');
           logger.warn('');
         } else {
           logger.error('❌ Failed to load mnemonic from backup file');
@@ -153,12 +153,12 @@ export class HSMService {
       logger.warn('  RECOMMENDED: Use the interactive backup script');
       logger.warn('');
       logger.warn('  Execute in the container:');
-      logger.warn('    docker exec -it wallet-softhsm-service sh /app/scripts/backup-mnemonic.sh');
+      logger.warn('    docker exec -it softhsm-service sh /app/scripts/backup-mnemonic.sh');
       logger.warn('');
       logger.warn('  OR manually:');
       logger.warn('    1. View the backup file and WRITE DOWN the mnemonic on paper');
       logger.warn('    2. Store the paper backup in multiple safe locations');
-      logger.warn('    3. DELETE the backup file: docker exec wallet-softhsm-service shred -u ' + config.mnemonic.backupPath);
+      logger.warn('    3. DELETE the backup file: docker exec softhsm-service shred -u ' + config.mnemonic.backupPath);
       logger.warn('');
       logger.warn('⚠️  WARNING: Anyone with this mnemonic can control your assets!');
       logger.warn('⚠️  Losing this mnemonic means losing access to all keys!');
