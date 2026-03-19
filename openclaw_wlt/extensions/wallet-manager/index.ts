@@ -1,6 +1,34 @@
 import { Type } from "@sinclair/typebox";
 import { ethers } from "ethers";
-import { getSoftHSMClient } from "./softhsm-client.js";
+import { SoftHSMClient } from "./softhsm-client.js";
+
+/**
+ * SoftHSM 客户端单例（延迟初始化）
+ * 移到 index.ts 以延迟环境变量读取时机到工具实际调用时
+ */
+let softHSMClientInstance: SoftHSMClient | null = null;
+
+function getSoftHSMClient(): SoftHSMClient {
+  if (!softHSMClientInstance) {
+    const baseURL = process.env.SOFTHSM_SERVICE_URL || 'http://softhsm-service:3000';
+    const apiKey = process.env.SOFTHSM_API_KEY;
+    const apiSecret = process.env.SOFTHSM_API_SECRET;
+
+    console.log('[wallet-manager] Initializing SoftHSM client...');
+    console.log('[wallet-manager] SOFTHSM_SERVICE_URL:', baseURL);
+    console.log('[wallet-manager] SOFTHSM_API_KEY:', apiKey ? `${apiKey.substring(0, 10)}...` : 'MISSING');
+    console.log('[wallet-manager] SOFTHSM_API_SECRET:', apiSecret ? `${apiSecret.substring(0, 10)}...` : 'MISSING');
+
+    if (!apiKey || !apiSecret) {
+      throw new Error('SOFTHSM_API_KEY and SOFTHSM_API_SECRET must be set in environment variables');
+    }
+
+    softHSMClientInstance = new SoftHSMClient(baseURL, apiKey, apiSecret);
+    console.log('[wallet-manager] SoftHSM client initialized successfully');
+  }
+
+  return softHSMClientInstance;
+}
 
 // Infura network mapping by chainId
 const INFURA_NETWORKS: Record<number, string> = {

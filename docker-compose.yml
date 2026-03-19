@@ -113,6 +113,9 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN_2:-${TELEGRAM_BOT_TOKEN}}
       FEISHU_APP_ID: ${FEISHU_APP_ID_2:-${FEISHU_APP_ID}}
       FEISHU_APP_SECRET: ${FEISHU_APP_SECRET_2:-${FEISHU_APP_SECRET}}
+      SOFTHSM_API_KEY: ${SOFTHSM_API_KEY}
+      SOFTHSM_API_SECRET: ${SOFTHSM_API_SECRET}
+      SOFTHSM_SERVICE_URL: http://softhsm-service:3000
       TZ: ${OPENCLAW_TZ:-UTC}
     volumes:
       - ${OPENCLAW_CONFIG_DIR_2:-~/.openclaw2}:/home/node/.openclaw
@@ -175,6 +178,9 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       FEISHU_APP_ID: ${FEISHU_APP_ID_2:-${FEISHU_APP_ID}}
       FEISHU_APP_SECRET: ${FEISHU_APP_SECRET_2:-${FEISHU_APP_SECRET}}
+      SOFTHSM_API_KEY: ${SOFTHSM_API_KEY}
+      SOFTHSM_API_SECRET: ${SOFTHSM_API_SECRET}
+      SOFTHSM_SERVICE_URL: http://softhsm-service:3000
       TZ: ${OPENCLAW_TZ:-UTC}
     volumes:
       - ${OPENCLAW_CONFIG_DIR_2:-~/.openclaw2}:/home/node/.openclaw
@@ -191,7 +197,7 @@ services:
       context: .
       dockerfile: Dockerfile.softHSM
     image: openclaw-softhsm:latest
-    container_name: wallet-softhsm-service
+    container_name: softhsm-service
     restart: unless-stopped
     ports:
       - "3000:3000"

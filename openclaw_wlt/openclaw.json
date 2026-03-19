@@ -275,7 +275,11 @@
       "eth_sign_message",
       "btc_get_address",
       "sol_get_address"
-    ]
+    ],
+    "agentToAgent": {
+      "enabled": true,
+      "allow": ["wallet-custody"]
+    }
   },
   "commands": {
     "native": "auto",
@@ -305,6 +309,18 @@
       "groupPolicy": "allowlist",
       "streaming": "partial",
       "linkPreview": true
+    },
+    "feishu": {
+      "enabled": true,
+      "appId": "${FEISHU_APP_ID}",
+      "appSecret": "${FEISHU_APP_SECRET}",
+      "domain": "lark",
+      "dmPolicy": "pairing",
+      "groupPolicy": "allowlist",
+      "streaming": "partial",
+      "commands": {
+        "nativeSkills": true
+      }
     }
   },
   "gateway": {
@@ -337,10 +353,14 @@
   "plugins": {
     "allow": [
       "wallet-manager",
-      "telegram"
+      "telegram",
+      "feishu"
     ],
     "entries": {
       "wallet-manager": {
+        "enabled": true
+      },
+      "feishu": {
         "enabled": true
       }
     }

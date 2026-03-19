@@ -164,24 +164,3 @@ export class SoftHSMClient {
     }
   }
 }
-
-/**
- * 创建SoftHSM客户端实例（单例模式）
- */
-let softHSMClientInstance: SoftHSMClient | null = null;
-
-export function getSoftHSMClient(): SoftHSMClient {
-  if (!softHSMClientInstance) {
-    const baseURL = process.env.SOFTHSM_SERVICE_URL || 'http://softhsm-service:3000';
-    const apiKey = process.env.SOFTHSM_API_KEY;
-    const apiSecret = process.env.SOFTHSM_API_SECRET;
-
-    if (!apiKey || !apiSecret) {
-      throw new Error('SOFTHSM_API_KEY and SOFTHSM_API_SECRET must be set in environment variables');
-    }
-
-    softHSMClientInstance = new SoftHSMClient(baseURL, apiKey, apiSecret);
-  }
-
-  return softHSMClientInstance;
-}
