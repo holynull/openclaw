@@ -136,10 +136,30 @@ export class HSMService {
       // 保存助记词到备份文件
       await this.saveMnemonicBackup(this.mnemonic);
 
-      // 🔑 立即导入第一个密钥到 HSM（防止重启后重新生成助记词）
-      logger.info('📥 Importing first key into HSM...');
-      await this.importKeyFromMnemonic(0, 'eth-key-0', this.mnemonic);
-      logger.info('✅ First key imported successfully');
+      // 🔑 批量导入前 10 个账户密钥到 HSM（防止删除 mnemonic 后无法使用）
+      logger.info('📥 Importing first 10 keys into HSM...');
+      const ethWallet = new EthWallet();
+      const addresses: string[] = [];
+      
+      for (let i = 0; i < 10; i++) {
+        const keyLabel = `eth-key-${i}`;
+        logger.info(`  [${i}] Importing ${keyLabel}...`);
+        
+        const result = await this.importKeyFromMnemonic(i, keyLabel, this.mnemonic);
+        
+        // 从公钥计算地址用于显示
+        const hdPath = `${config.mnemonic.hdPathPrefix}/${i}`;
+        const privateKey = await ethWallet.getDerivedPrivateKey({ 
+          mnemonic: this.mnemonic!, 
+          hdPath 
+        });
+        const account = await ethWallet.getNewAddress({ privateKey });
+        addresses.push(account.address);
+        
+        logger.info(`  [${i}] ✓ ${account.address}`);
+      }
+      
+      logger.info('✅ All 10 keys imported successfully');
 
       // 输出警告
       logger.warn('╔════════════════════════════════════════════════════════════════╗');
@@ -163,18 +183,11 @@ export class HSMService {
       logger.warn('⚠️  WARNING: Anyone with this mnemonic can control your assets!');
       logger.warn('⚠️  Losing this mnemonic means losing access to all keys!');
       logger.warn('');
-      logger.warn('Derived addresses (for verification):');
+      logger.warn('Derived addresses (accounts 0-9):');
       
-      // 显示前3个派生的地址
-      const ethWallet = new EthWallet();
-      for (let i = 0; i < 3; i++) {
-        const hdPath = `${config.mnemonic.hdPathPrefix}/${i}`;
-        const privateKey = await ethWallet.getDerivedPrivateKey({ 
-          mnemonic: this.mnemonic!, 
-          hdPath 
-        });
-        const account = await ethWallet.getNewAddress({ privateKey });
-        logger.warn(`  [${i}] ${account.address}`);
+      // 显示所有 10 个地址
+      for (let i = 0; i < addresses.length; i++) {
+        logger.warn(`  [${i}] ${addresses[i]}`);
       }
       
       logger.warn('');
