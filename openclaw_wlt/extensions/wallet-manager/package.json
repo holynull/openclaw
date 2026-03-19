@@ -12,6 +12,7 @@
     "@okxweb3/coin-solana": "^2.0.0",
     "@okxweb3/crypto-lib": "^2.0.0",
     "@sinclair/typebox": "^0.34.48",
+    "axios": "^1.7.2",
     "ethers": "^6.13.0"
   },
   "openclaw": {

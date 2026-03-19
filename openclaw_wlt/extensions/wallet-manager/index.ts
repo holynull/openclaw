@@ -1,21 +1,6 @@
 import { Type } from "@sinclair/typebox";
-import { EthWallet } from "@okxweb3/coin-ethereum";
-import { BtcWallet } from "@okxweb3/coin-bitcoin";
-import { SolWallet } from "@okxweb3/coin-solana";
 import { ethers } from "ethers";
-
-// Helper function to derive private key from mnemonic stored in environment variable
-async function derivePrivateKey(wallet: any, derivationPath: string): Promise<string> {
-  const mnemonic = process.env.WALLET_MNEMONIC;
-  if (!mnemonic) {
-    throw new Error("WALLET_MNEMONIC environment variable is not set");
-  }
-  const result = await wallet.getDerivedPrivateKey({
-    mnemonic,
-    hdPath: derivationPath,
-  });
-  return result;
-}
+import { getSoftHSMClient } from "./softhsm-client.js";
 
 // Infura network mapping by chainId
 const INFURA_NETWORKS: Record<number, string> = {
@@ -99,7 +84,7 @@ export default function (api: any) {
   // Ethereum: Generate Address
   api.registerTool({
     name: "eth_get_address",
-    description: "Get Ethereum address from the mnemonic using BIP44 derivation path. Supports multiple addresses by changing the account index.",
+    description: "Get Ethereum address from SoftHSM using BIP44 derivation path. Supports multiple addresses by changing the account index.",
     parameters: Type.Object({
       accountIndex: Type.Optional(Type.Number({ 
         description: "Account index (0-based). Default: 0. Derives address at path m/44'/60'/0'/0/{accountIndex}" 
@@ -108,11 +93,8 @@ export default function (api: any) {
     async execute(_id: any, params: any) {
       try {
         const accountIndex = params.accountIndex ?? 0;
-        const derivationPath = `m/44'/60'/0'/0/${accountIndex}`;
-        
-        const wallet = new EthWallet();
-        const privateKey = await derivePrivateKey(wallet, derivationPath);
-        const addressInfo = await wallet.getNewAddress({ privateKey });
+        const client = getSoftHSMClient();
+        const address = await client.getEthereumAddress(accountIndex);
         
         return {
           content: [
@@ -120,7 +102,7 @@ export default function (api: any) {
               type: "text",
               text: JSON.stringify({
                 chain: "ethereum",
-                address: addressInfo.address,
+                address,
                 accountIndex,
               }, null, 2),
             },
@@ -149,13 +131,10 @@ export default function (api: any) {
       try {
         let address = params.address;
         
-        // If no address provided, derive from default path (account 0)
+        // If no address provided, get from SoftHSM
         if (!address) {
-          const derivationPath = "m/44'/60'/0'/0/0";
-          const wallet = new EthWallet();
-          const privateKey = await derivePrivateKey(wallet, derivationPath);
-          const addressInfo = await wallet.getNewAddress({ privateKey });
-          address = addressInfo.address;
+          const client = getSoftHSMClient();
+          address = await client.getEthereumAddress(0);
         }
         
         const provider = getProvider(params.chainId, params.rpcUrl);
@@ -200,13 +179,10 @@ export default function (api: any) {
       try {
         let address = params.address;
         
-        // If no address provided, derive from default path (account 0)
+        // If no address provided, get from SoftHSM
         if (!address) {
-          const derivationPath = "m/44'/60'/0'/0/0";
-          const wallet = new EthWallet();
-          const privateKey = await derivePrivateKey(wallet, derivationPath);
-          const addressInfo = await wallet.getNewAddress({ privateKey });
-          address = addressInfo.address;
+          const client = getSoftHSMClient();
+          address = await client.getEthereumAddress(0);
         }
         
         const provider = getProvider(params.chainId, params.rpcUrl);
@@ -268,11 +244,8 @@ export default function (api: any) {
         let fromAddress = params.from;
         if (!fromAddress) {
           const accountIndex = params.accountIndex ?? 0;
-          const derivationPath = `m/44'/60'/0'/0/${accountIndex}`;
-          const wallet = new EthWallet();
-          const privateKey = await derivePrivateKey(wallet, derivationPath);
-          const addressInfo = await wallet.getNewAddress({ privateKey });
-          fromAddress = addressInfo.address;
+          const client = getSoftHSMClient();
+          fromAddress = await client.getEthereumAddress(accountIndex);
         }
 
         const provider = getProvider(params.chainId, params.rpcUrl);
@@ -432,7 +405,7 @@ export default function (api: any) {
   // Ethereum: Transfer ETH
   api.registerTool({
     name: "eth_transfer",
-    description: "Transfer ETH to another address. Supports both legacy and EIP-1559 transactions. chainId is REQUIRED. Transaction is automatically broadcast to network.",
+    description: "Transfer ETH to another address. Supports both legacy and EIP-1559 transactions. chainId is REQUIRED. Transaction is automatically broadcast to network and signed by SoftHSM.",
     parameters: Type.Object({
       to: Type.String({ description: "Recipient address (REQUIRED)" }),
       amount: Type.String({ description: "Amount in ether (REQUIRED, e.g., '0.1' for 0.1 ETH)" }),
@@ -448,12 +421,8 @@ export default function (api: any) {
     async execute(_id: any, params: any) {
       try {
         const accountIndex = params.accountIndex ?? 0;
-        const derivationPath = `m/44'/60'/0'/0/${accountIndex}`;
-        
-        const wallet = new EthWallet();
-        const privateKey = await derivePrivateKey(wallet, derivationPath);
-        const addressInfo = await wallet.getNewAddress({ privateKey });
-        const fromAddress = addressInfo.address;
+        const client = getSoftHSMClient();
+        const fromAddress = await client.getEthereumAddress(accountIndex);
         
         const provider = getProvider(params.chainId);
         const networkChainId = (await provider.getNetwork()).chainId;
@@ -476,7 +445,15 @@ export default function (api: any) {
         const gasPreset = params.gasPreset || 'medium';
         const multiplier = gasPresetMultipliers[gasPreset as keyof typeof gasPresetMultipliers];
         
-        let txData: any;
+        let signParams: any = {
+          chainId: Number(networkChainId),
+          to: params.to,
+          value: valueWei.toString(),
+          nonce,
+          gasLimit: params.gasLimit || "21000",
+          accountIndex,
+        };
+        
         let txType: number;
         
         // Determine transaction type (EIP-1559 or legacy)
@@ -500,16 +477,8 @@ export default function (api: any) {
             }
           }
           
-          txData = {
-            to: params.to,
-            value: valueWei.toString(),
-            nonce,
-            gasLimit: params.gasLimit || "21000",
-            maxFeePerGas: ethers.parseUnits(maxFeePerGas, 'gwei').toString(),
-            maxPriorityFeePerGas: ethers.parseUnits(maxPriorityFeePerGas, 'gwei').toString(),
-            chainId: Number(networkChainId),
-            type: 2,
-          };
+          signParams.maxFeePerGas = ethers.parseUnits(maxFeePerGas, 'gwei').toString();
+          signParams.maxPriorityFeePerGas = ethers.parseUnits(maxPriorityFeePerGas, 'gwei').toString();
         } else {
           // Legacy transaction
           txType = 0;
@@ -520,25 +489,14 @@ export default function (api: any) {
             gasPrice = ethers.formatUnits(feeData.gasPrice || 0n, 'gwei');
           }
           
-          txData = {
-            to: params.to,
-            value: valueWei.toString(),
-            nonce,
-            gasLimit: params.gasLimit || "21000",
-            gasPrice: ethers.parseUnits(gasPrice, 'gwei').toString(),
-            chainId: Number(networkChainId),
-            type: 0,
-          };
+          signParams.gasPrice = ethers.parseUnits(gasPrice, 'gwei').toString();
         }
         
-        // Sign transaction
-        const signedTx = await wallet.signTransaction({
-          privateKey,
-          data: txData,
-        });
+        // Sign transaction using SoftHSM
+        const result = await client.signEthereumTransaction(signParams);
         
-        // Always broadcast transaction
-        const tx = await provider.broadcastTransaction(signedTx);
+        // Broadcast transaction
+        const tx = await provider.broadcastTransaction(result.signedTransaction);
         const txHash = tx.hash;
         
         return {
@@ -553,6 +511,7 @@ export default function (api: any) {
                 gasPreset: gasPreset,
                 txType: txType === 2 ? 'EIP-1559' : 'Legacy',
                 chainId: params.chainId,
+                signatureId: result.signatureId,
               }, null, 2),
             },
           ],
@@ -587,12 +546,8 @@ export default function (api: any) {
     async execute(_id: any, params: any) {
       try {
         const accountIndex = params.accountIndex ?? 0;
-        const derivationPath = `m/44'/60'/0'/0/${accountIndex}`;
-        
-        const wallet = new EthWallet();
-        const privateKey = await derivePrivateKey(wallet, derivationPath);
-        const addressInfo = await wallet.getNewAddress({ privateKey });
-        const fromAddress = addressInfo.address;
+        const client = getSoftHSMClient();
+        const fromAddress = await client.getEthereumAddress(accountIndex);
         
         const provider = getProvider(params.chainId);
         const networkChainId = (await provider.getNetwork()).chainId;
@@ -611,11 +566,18 @@ export default function (api: any) {
         // Convert amount to token base units
         const amountWei = ethers.parseUnits(params.amount, decimals);
         
+        // Encode ERC20 transfer function call
+        const transferData = tokenContract.interface.encodeFunctionData("transfer", [params.to, amountWei]);
+        
         // Estimate gas limit if not provided
         let gasLimit = params.gasLimit;
         if (!gasLimit) {
           try {
-            const estimatedGas = await tokenContract.transfer.estimateGas(params.to, amountWei);
+            const estimatedGas = await provider.estimateGas({
+              from: fromAddress,
+              to: params.tokenAddress,
+              data: transferData,
+            });
             gasLimit = (estimatedGas * 120n / 100n).toString(); // Add 20% buffer
           } catch (e) {
             console.error("Error estimating gas:", e);
@@ -632,7 +594,16 @@ export default function (api: any) {
         const gasPreset = params.gasPreset || 'medium';
         const multiplier = gasPresetMultipliers[gasPreset as keyof typeof gasPresetMultipliers];
         
-        let txData: any;
+        let signParams: any = {
+          chainId: Number(networkChainId),
+          to: params.tokenAddress,  // Contract address for ERC20
+          value: "0",  // No ETH transfer for ERC20
+          nonce,
+          gasLimit,
+          data: transferData,  // ERC20 transfer function call
+          accountIndex,
+        };
+        
         let txType: number;
         
         // Determine transaction type (EIP-1559 or legacy)
@@ -655,17 +626,8 @@ export default function (api: any) {
             }
           }
           
-          txData = {
-            to: params.to,
-            value: amountWei.toString(),
-            nonce,
-            gasLimit,
-            maxFeePerGas: ethers.parseUnits(maxFeePerGas, 'gwei').toString(),
-            maxPriorityFeePerGas: ethers.parseUnits(maxPriorityFeePerGas, 'gwei').toString(),
-            chainId: Number(networkChainId),
-            type: 2,
-            contractAddress: params.tokenAddress,
-          };
+          signParams.maxFeePerGas = ethers.parseUnits(maxFeePerGas, 'gwei').toString();
+          signParams.maxPriorityFeePerGas = ethers.parseUnits(maxPriorityFeePerGas, 'gwei').toString();
         } else {
           // Legacy transaction
           txType = 0;
@@ -677,26 +639,14 @@ export default function (api: any) {
             gasPrice = ethers.formatUnits(BigInt(Math.floor(Number(basePrice) * multiplier)), 'gwei');
           }
           
-          txData = {
-            to: params.to,
-            value: amountWei.toString(),
-            nonce,
-            gasLimit,
-            gasPrice: ethers.parseUnits(gasPrice, 'gwei').toString(),
-            chainId: Number(networkChainId),
-            type: 0,
-            contractAddress: params.tokenAddress,
-          };
+          signParams.gasPrice = ethers.parseUnits(gasPrice, 'gwei').toString();
         }
         
-        // Sign transaction
-        const signedTx = await wallet.signTransaction({
-          privateKey,
-          data: txData,
-        });
+        // Sign transaction using SoftHSM
+        const result = await client.signEthereumTransaction(signParams);
         
-        // Always broadcast transaction
-        const tx = await provider.broadcastTransaction(signedTx);
+        // Broadcast transaction
+        const tx = await provider.broadcastTransaction(result.signedTransaction);
         const txHash = tx.hash;
         
         return {
@@ -716,12 +666,13 @@ export default function (api: any) {
                 gasPreset: gasPreset,
                 txType: txType === 2 ? 'EIP-1559' : 'Legacy',
                 chainId: params.chainId,
+                signatureId: result.signatureId,
               }, null, 2),
             },
           ],
         };
       } catch (error: any) {
-        console.error("Error in eth_transfer:", error);
+        console.error("Error in eth_transfer_token:", error);
         return {
           content: [{ type: "text", text: `Error: ${error.message}` }],
           isError: true,
@@ -733,39 +684,25 @@ export default function (api: any) {
   // Ethereum: Sign Message
   api.registerTool({
     name: "eth_sign_message",
-    description: "Sign a message using Ethereum personal sign (EIP-191). Commonly used for authentication.",
+    description: "Sign a message using Ethereum personal sign (EIP-191). NOTE: This feature requires SoftHSM service to implement message signing API, which is currently not available.",
     parameters: Type.Object({
       message: Type.String({ description: "Message to sign" }),
       accountIndex: Type.Optional(Type.Number({ description: "Account index (0-based). Default: 0" })),
     }),
     async execute(_id: any, params: any) {
       try {
-        const accountIndex = params.accountIndex ?? 0;
-        const derivationPath = `m/44'/60'/0'/0/${accountIndex}`;
-        
-        const wallet = new EthWallet();
-        const privateKey = await derivePrivateKey(wallet, derivationPath);
-        const addressInfo = await wallet.getNewAddress({ privateKey });
-        
-        const signature = await wallet.signMessage({
-          privateKey,
-          data: {
-            type: 1, // PERSONAL_SIGN
-            message: params.message,
-          },
-        });
-        
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify({
-                address: addressInfo.address,
+                error: "Message signing is not yet implemented in SoftHSM service. Please contact administrator to add this feature.",
                 message: params.message,
-                signature,
+                accountIndex: params.accountIndex ?? 0,
               }, null, 2),
             },
           ],
+          isError: true,
         };
       } catch (error: any) {
         console.error("Error in eth_sign_message:", error);
@@ -895,10 +832,10 @@ export default function (api: any) {
 
   // ==================== Bitcoin Tools ====================
   
-  // Bitcoin: Generate Address
+  // Bitcoin: Generate Address (NOT SUPPORTED with SoftHSM)
   api.registerTool({
     name: "btc_get_address",
-    description: "Get Bitcoin address from the mnemonic using BIP44 derivation path. Supports multiple address types.",
+    description: "Bitcoin address generation is not supported when using SoftHSM. SoftHSM currently only supports Ethereum.",
     parameters: Type.Object({
       accountIndex: Type.Optional(Type.Number({ description: "Account index (0-based). Default: 0" })),
       addressType: Type.Optional(
@@ -909,28 +846,18 @@ export default function (api: any) {
     }),
     async execute(_id: any, params: any) {
       try {
-        const accountIndex = params.accountIndex ?? 0;
-        const derivationPath = `m/44'/0'/0'/0/${accountIndex}`;
-        
-        const wallet = new BtcWallet();
-        const privateKey = await derivePrivateKey(wallet, derivationPath);
-        const address = await wallet.getNewAddress({
-          privateKey,
-          addressType: params.addressType || "native_segwit",
-        });
-        
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ 
-                chain: "bitcoin", 
-                address, 
-                addressType: params.addressType || "native_segwit", 
-                accountIndex 
+              text: JSON.stringify({
+                error: "Bitcoin is not supported when using SoftHSM service. Only Ethereum is currently supported.",
+                chain: "bitcoin",
+                accountIndex: params.accountIndex ?? 0,
               }, null, 2),
             },
           ],
+          isError: true,
         };
       } catch (error: any) {
         console.error("Error in btc_get_address:", error);
@@ -944,35 +871,27 @@ export default function (api: any) {
 
   // ==================== Solana Tools ====================
   
-  // Solana: Generate Address
+  // Solana: Generate Address (NOT SUPPORTED with SoftHSM)
   api.registerTool({
     name: "sol_get_address",
-    description: "Get Solana address from the mnemonic using BIP44 derivation path.",
+    description: "Solana address generation is not supported when using SoftHSM. SoftHSM currently only supports Ethereum.",
     parameters: Type.Object({
       accountIndex: Type.Optional(Type.Number({ description: "Account index (0-based). Default: 0. Derives address at path m/44'/501'/{accountIndex}'/0'" })),
     }),
     async execute(_id: any, params: any) {
       try {
-        const accountIndex = params.accountIndex ?? 0;
-        const derivationPath = `m/44'/501'/${accountIndex}'/0'`;
-        
-        const wallet = new SolWallet();
-        const privateKey = await derivePrivateKey(wallet, derivationPath);
-        const address = await wallet.getNewAddress({
-          privateKey,
-        });
-        
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ 
-                chain: "solana", 
-                address, 
-                accountIndex 
+              text: JSON.stringify({
+                error: "Solana is not supported when using SoftHSM service. Only Ethereum is currently supported.",
+                chain: "solana",
+                accountIndex: params.accountIndex ?? 0,
               }, null, 2),
             },
           ],
+          isError: true,
         };
       } catch (error: any) {
         console.error("Error in sol_get_address:", error);

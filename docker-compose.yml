@@ -201,7 +201,7 @@ services:
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=15m
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - ALLOWED_ORIGINS=openclaw-gateway-2,${ALLOWED_ORIGINS:-*}
       - SOFTHSM_MODULE=/usr/lib/softhsm/libsofthsm2.so
       - HSM_TOKEN_LABEL=wallet-custody
       - HSM_PIN=${HSM_PIN}
