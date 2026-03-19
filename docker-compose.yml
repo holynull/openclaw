@@ -246,8 +246,6 @@ services:
 
 volumes:
   hsm-data:
-    external: true
     name: softhsm-data
   audit-logs:
-    external: true
     name: softhsm-logs
