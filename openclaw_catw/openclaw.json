@@ -192,6 +192,9 @@
       }
     }
   },
+  "browser": {
+    "enabled": false
+  },
   "agents": {
     "defaults": {
       "model": {
@@ -206,7 +209,13 @@
         "openai/gpt-4o": {},
         "openai/gpt-5.4": {}
       },
-      "workspace": "/home/node/.openclaw/workspace"
+      "workspace": "/home/node/.openclaw/workspace",
+      "sandbox": {
+        "browser": {
+          "enabled": true,
+          "headless": true
+        }
+      }
     },
     "list": [
       {
@@ -225,11 +234,25 @@
             "eth_get_token_balance",
             "eth_estimate_gas",
             "eth_get_transaction",
+            "eth_get_token_info",
+            "eth_get_nonce",
+            "eth_call",
+            "eth_get_block",
+            "eth_get_logs",
+            "eth_get_gas_price",
             "btc_get_balance",
             "btc_get_transaction",
+            "btc_get_block",
+            "btc_get_utxos",
+            "btc_get_address_info",
             "sol_get_balance",
             "sol_get_token_balance",
-            "sol_get_transaction"
+            "sol_get_transaction",
+            "sol_get_account_info",
+            "sol_get_token_accounts",
+            "sol_get_token_supply",
+            "get_token_price",
+            "decode_address"
           ]
         }
       }
@@ -237,16 +260,35 @@
   },
   "tools": {
     "profile": "full",
+    "deny": [
+      "camera",
+      "canvas",
+      "nodes"
+    ],
     "alsoAllow": [
       "eth_get_balance",
       "eth_get_token_balance",
       "eth_estimate_gas",
       "eth_get_transaction",
+      "eth_get_token_info",
+      "eth_get_nonce",
+      "eth_call",
+      "eth_get_block",
+      "eth_get_logs",
+      "eth_get_gas_price",
       "btc_get_balance",
       "btc_get_transaction",
+      "btc_get_block",
+      "btc_get_utxos",
+      "btc_get_address_info",
       "sol_get_balance",
       "sol_get_token_balance",
-      "sol_get_transaction"
+      "sol_get_transaction",
+      "sol_get_account_info",
+      "sol_get_token_accounts",
+      "sol_get_token_supply",
+      "get_token_price",
+      "decode_address"
     ]
   },
   "bindings": [

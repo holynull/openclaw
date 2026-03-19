@@ -1,220 +1,169 @@
 ---
 name: blockchain-query
-description: Query blockchain data from Ethereum, Bitcoin, and Solana networks
-invocation:
-  - when the user asks about cryptocurrency balances
-  - when the user needs to check blockchain transactions
-  - when the user wants to query token balances
-  - when the user asks about gas fees or transaction costs
-  - when the user mentions blockchain addresses or transaction hashes
+description: Multi-chain blockchain query tools for Ethereum/EVM, Bitcoin, and Solana. 25 read-only tools for balance checking, transaction history, token info, contracts, blocks, and on-chain data analysis.
+triggers:
+  - blockchain
+  - crypto
+  - ethereum
+  - bitcoin
+  - solana
+  - balance
+  - transaction
+  - token
+  - wallet
+  - address
+  - gas
+  - utxo
+  - price
+applyTo: main
 ---
 
-# Blockchain Query Skill
+# Blockchain Query Tools
 
-This skill helps you query blockchain data from multiple chains including Ethereum (and EVM chains), Bitcoin, and Solana.
+This skill provides **25 read-only blockchain query tools** across Ethereum/EVM chains, Bitcoin, and Solana networks.
 
-## Available Tools
+## ✨ Key Features
 
-### Ethereum Tools
+- **Multi-chain Support**: Ethereum, Polygon, Arbitrum, Optimism, Base, BSC, Bitcoin, Solana
+- **Read-only Operations**: All tools are safe query operations with no transaction signing
+- **Comprehensive Coverage**: Balance, transactions, tokens, contracts, blocks, logs, UTXOs, prices
+- **Price Data**: Real-time token prices via CoinGecko API
+- **Address Validation**: Cross-chain address validation and detection
 
-#### 1. `eth_get_balance`
+## 🔧 Tool Categories
 
-Query ETH balance for an Ethereum address.
+### Ethereum/EVM Tools (12)
 
-**Parameters:**
+- `eth_get_balance` - ETH balance
+- `eth_get_token_balance` - ERC20 token balance
+- `eth_get_token_info` - Token details (name, symbol, decimals, supply)
+- `eth_estimate_gas` - Gas fee estimation
+- `eth_get_transaction` - Transaction details
+- `eth_get_nonce` - Account nonce
+- `eth_call` - Call contract read method
+- `eth_get_block` - Block information
+- `eth_get_logs` - Query event logs
+- `eth_get_gas_price` - Current gas prices
 
-- `address` (required): Ethereum address
-- `chainId` (required): Chain ID (1=Ethereum, 137=Polygon, 42161=Arbitrum, 10=Optimism, 8453=Base, 56=BSC, etc.)
-- `rpcUrl` (optional): Custom RPC endpoint URL
+### Bitcoin Tools (5)
 
-**Example:**
+- `btc_get_balance` - BTC balance
+- `btc_get_transaction` - Transaction details
+- `btc_get_block` - Block information
+- `btc_get_utxos` - Unspent outputs
+- `btc_get_address_info` - Address statistics
 
-```
-Check ETH balance for address 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb on Ethereum mainnet
-```
+### Solana Tools (6)
 
-#### 2. `eth_get_token_balance`
+- `sol_get_balance` - SOL balance
+- `sol_get_token_balance` - SPL token balance
+- `sol_get_transaction` - Transaction details
+- `sol_get_account_info` - Account information
+- `sol_get_token_accounts` - All owned tokens
+- `sol_get_token_supply` - Token total supply
 
-Query ERC20 token balance for an address.
+### Cross-Chain Tools (2)
 
-**Parameters:**
+- `get_token_price` - Token price from CoinGecko
+- `decode_address` - Validate and identify address type
 
-- `tokenAddress` (required): ERC20 token contract address
-- `address` (required): Holder address
-- `chainId` (required): Chain ID
-- `rpcUrl` (optional): Custom RPC endpoint URL
+## 📋 Common Chain IDs
 
-**Example:**
+| Chain            | Chain ID |
+| ---------------- | -------- |
+| Ethereum Mainnet | 1        |
+| Polygon          | 137      |
+| Arbitrum One     | 42161    |
+| Optimism         | 10       |
+| Base             | 8453     |
+| BSC              | 56       |
+| Sepolia Testnet  | 11155111 |
 
-```
-Check USDT balance for address 0x... on Ethereum (token address: 0xdac17f958d2ee523a2206206994597c13d831ec7)
-```
+## 💡 Usage Examples
 
-#### 3. `eth_estimate_gas`
-
-Estimate gas fees for ETH or ERC20 token transfers.
-
-**Parameters:**
-
-- `chainId` (required): Chain ID
-- `to` (required): Recipient address
-- `from` (required): Sender address
-- `amount` (optional): Amount to transfer
-- `tokenAddress` (optional): ERC20 token contract address (if transferring tokens)
-- `rpcUrl` (optional): Custom RPC endpoint URL
-
-**Example:**
-
-```
-Estimate gas fee for sending 0.1 ETH from 0x... to 0x... on Ethereum mainnet
-```
-
-#### 4. `eth_get_transaction`
-
-Get transaction details by transaction hash.
-
-**Parameters:**
-
-- `transactionHash` (required): Transaction hash
-- `chainId` (required): Chain ID
-- `includeReceipt` (optional): Whether to include transaction receipt (default: true)
-
-**Example:**
+### Check Ethereum Balance
 
 ```
-Get transaction details for hash 0x123abc... on Ethereum mainnet
+Get ETH balance for 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb on Ethereum mainnet
 ```
 
-### Bitcoin Tools
-
-#### 5. `btc_get_balance`
-
-Get Bitcoin balance for an address.
-
-**Parameters:**
-
-- `address` (required): Bitcoin address
-- `network` (optional): 'mainnet' or 'testnet' (default: 'mainnet')
-
-**Example:**
+### Check Token Balance
 
 ```
-Check BTC balance for address bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+Check USDT balance for 0x... on Ethereum (token: 0xdac17f958d2ee523a2206206994597c13d831ec7)
 ```
 
-#### 6. `btc_get_transaction`
-
-Get Bitcoin transaction details by transaction ID.
-
-**Parameters:**
-
-- `txid` (required): Transaction ID
-- `network` (optional): 'mainnet' or 'testnet' (default: 'mainnet')
-
-**Example:**
+### Get Token Price
 
 ```
-Get Bitcoin transaction details for txid abc123...
+Get current price of Bitcoin (use tokenId: 'bitcoin')
 ```
 
-### Solana Tools
-
-#### 7. `sol_get_balance`
-
-Get SOL balance for a Solana address.
-
-**Parameters:**
-
-- `address` (required): Solana address
-- `network` (optional): 'mainnet', 'devnet', or 'testnet' (default: 'mainnet')
-- `rpcUrl` (optional): Custom Solana RPC URL
-
-**Example:**
+### Estimate Gas Fee
 
 ```
-Check SOL balance for address 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+Estimate gas for sending 0.1 ETH from 0x... to 0x... on Arbitrum
 ```
 
-#### 8. `sol_get_token_balance`
-
-Get SPL token balance for a Solana token account.
-
-**Parameters:**
-
-- `tokenAccount` (required): SPL token account address (not the token mint address)
-- `network` (optional): 'mainnet', 'devnet', or 'testnet' (default: 'mainnet')
-- `rpcUrl` (optional): Custom Solana RPC URL
-
-**Example:**
+### Query Transaction
 
 ```
-Check SPL token balance for token account 3wyAj7Rt1TWVPikq...
+Get transaction details for hash 0x123abc... on Polygon
 ```
 
-#### 9. `sol_get_transaction`
-
-Get Solana transaction details by signature.
-
-**Parameters:**
-
-- `signature` (required): Transaction signature
-- `network` (optional): 'mainnet', 'devnet', or 'testnet' (default: 'mainnet')
-- `rpcUrl` (optional): Custom Solana RPC URL
-
-**Example:**
+### Get Bitcoin UTXOs
 
 ```
-Get Solana transaction details for signature 5VERv8NMv...
+Get unspent outputs for Bitcoin address bc1q...
 ```
 
-## Common Chain IDs (Ethereum)
+### Get Solana Token Accounts
 
-- **1**: Ethereum Mainnet
-- **137**: Polygon
-- **42161**: Arbitrum One
-- **10**: Optimism
-- **8453**: Base
-- **56**: Binance Smart Chain (BSC)
-- **11155111**: Sepolia Testnet
+```
+Show all SPL tokens owned by Solana address 7xKXtg2...
+```
 
-## Usage Guidelines
+### Validate Address
 
-1. **Always verify addresses**: Make sure addresses are properly formatted for the respective chain
-2. **Network selection**: Default networks are mainnet/production, specify testnet when needed
-3. **Read-only operations**: All these tools are read-only and cannot modify blockchain state
-4. **Rate limits**: Public RPC endpoints may have rate limits; consider using custom RPC URLs for heavy usage
-5. **Gas estimation**: Use `eth_estimate_gas` before suggesting transfers to show users the cost
+```
+Check what blockchain this address belongs to: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+```
 
-## Example Conversations
+## 🔒 Security Notes
 
-**User:** "What's my ETH balance on address 0x123...?"
-**Action:** Use `eth_get_balance` with chainId=1 (Ethereum mainnet)
+- **Read-only**: All tools are query operations with no transaction signing
+- **No private keys**: No sensitive data is required or handled
+- **Public RPCs**: Uses public RPC endpoints by default (Infura with API key if available)
+- **Rate limits**: Be mindful of public RPC rate limits
 
-**User:** "How much USDC do I have on Polygon?"
-**Action:** Use `eth_get_token_balance` with USDC token address on Polygon (chainId=137)
+## 🌐 Network Support
 
-**User:** "Check this transaction: 0xabc..."
-**Action:** Use `eth_get_transaction` with the provided hash and appropriate chainId
+### Ethereum/EVM Chains
 
-**User:** "What's the gas fee to send 1 ETH?"
-**Action:** Use `eth_estimate_gas` with the transfer details (requires from/to addresses)
+- **Mainnets**: Ethereum, Polygon, Arbitrum, Optimism, Base, BSC, Linea, Avalanche
+- **Testnets**: Sepolia, Polygon Amoy, Arbitrum Sepolia, Optimism Sepolia, Base Sepolia
 
-**User:** "Check my Bitcoin wallet bc1q..."
-**Action:** Use `btc_get_balance` with the Bitcoin address
+### Bitcoin
 
-**User:** "Show me Solana transaction abc123..."
-**Action:** Use `sol_get_transaction` with the transaction signature
+- **Mainnet** and **Testnet** via Blockstream API
 
-## Error Handling
+### Solana
 
-- Invalid addresses will return errors from the RPC
-- Non-existent transactions will return "not found" messages
-- Network connectivity issues will be reported in error messages
-- Always inform the user clearly when an error occurs and suggest corrections
+- **Mainnet**, **Devnet**, and **Testnet** via public RPC
 
-## Security Notes
+## ⚙️ Configuration
 
-- These tools only **query** blockchain data
-- No private keys or signing operations are involved
-- All data comes from public blockchain RPC endpoints
-- User addresses and transaction hashes are public information on blockchains
+### Environment Variables (Optional)
+
+- `INFURA_KEY`: For Infura RPC access (recommended for better reliability)
+
+### Custom RPC
+
+Most tools support custom RPC URL parameters for private or alternative endpoints.
+
+## 📚 Additional Resources
+
+- **Etherscan**: https://etherscan.io
+- **Blockstream**: https://blockstream.info
+- **Solscan**: https://solscan.io
+- **CoinGecko**: https://coingecko.com
