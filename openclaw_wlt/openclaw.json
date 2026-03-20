@@ -196,6 +196,20 @@
       }
     }
   },
+  "bindings": [
+    {
+      "agentId": "main",
+      "match": {
+        "channel": "feishu"
+      }
+    },
+    {
+      "agentId": "main",
+      "match": {
+        "channel": "telegram"
+      }
+    }
+  ],
   "agents": {
     "list": [
       {
@@ -207,41 +221,15 @@
         "workspace": "/home/node/.openclaw/workspace/main",
         "tools": {
           "profile": "full",
-          "alsoAllow": [
-            "sessions_spawn",
-            "subagents"
-          ],
-          "deny": [
-            "eth_get_address",
-            "eth_get_balance",
-            "eth_get_token_balance",
-            "eth_transfer",
-            "eth_transfer_token",
-            "eth_sign_message",
-            "btc_get_address",
-            "sol_get_address"
-          ]
-        },
-        "subagents": {
-          "allowAgents": ["wallet-custody"]
-        }
-      },
-      {
-        "id": "wallet-custody",
-        "name": "Wallet Custody Agent",
-        "model": {
-          "primary": "openai/gpt-5.4"
-        },
-        "workspace": "/home/node/.openclaw/workspace/wallet-custody",
-        "tools": {
-          "profile": "minimal",
           "allow": [
             "eth_get_address",
             "eth_get_balance",
             "eth_get_token_balance",
+            "eth_estimate_gas",
             "eth_transfer",
             "eth_transfer_token",
             "eth_sign_message",
+            "eth_get_transaction",
             "btc_get_address",
             "sol_get_address"
           ]
@@ -270,15 +258,16 @@
       "eth_get_address",
       "eth_get_balance",
       "eth_get_token_balance",
+      "eth_estimate_gas",
       "eth_transfer",
       "eth_transfer_token",
       "eth_sign_message",
+      "eth_get_transaction",
       "btc_get_address",
       "sol_get_address"
     ],
-    "agentToAgent": {
-      "enabled": true,
-      "allow": ["wallet-custody"]
+    "sessions": {
+      "visibility": "all"
     }
   },
   "commands": {
@@ -316,11 +305,7 @@
       "appSecret": "${FEISHU_APP_SECRET}",
       "domain": "lark",
       "dmPolicy": "pairing",
-      "groupPolicy": "allowlist",
-      "streaming": "partial",
-      "commands": {
-        "nativeSkills": true
-      }
+      "groupPolicy": "allowlist"
     }
   },
   "gateway": {
