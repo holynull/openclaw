@@ -90,8 +90,8 @@ export class HSMService {
     }
 
     try {
-      // 检查是否已有密钥
-      const objects = this.session.find({ class: pkcs11.ObjectClass.SECRET_KEY });
+      // 检查是否已有密钥 - 查找 PRIVATE_KEY 而不是 SECRET_KEY
+      const objects = this.session.find({ class: pkcs11.ObjectClass.PRIVATE_KEY });
       
       if (objects.length > 0) {
         logger.info('Existing keys found in HSM, skipping mnemonic generation');
