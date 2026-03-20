@@ -530,8 +530,28 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
       logger.info({ accountIndex }, 'Transaction hash signed successfully');
 
       // 正确计算 recoveryId：尝试两个可能的值，看哪个能恢复出正确的公钥
-      const r = signature.subarray(0, 32);
-      const s = signature.subarray(32, 64);
+      let r = signature.subarray(0, 32);
+      let s = signature.subarray(32, 64);
+      
+      // EIP-2: Normalize s value (must be <= secp256k1.n / 2)
+      // secp256k1 curve order n
+      const n = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141');
+      const halfN = n / 2n;
+      const sBigInt = BigInt('0x' + s.toString('hex'));
+      
+      let recoveryIdOffset = 0;
+      if (sBigInt > halfN) {
+        // s is too large, normalize it: s' = n - s
+        const sNormalized = n - sBigInt;
+        s = Buffer.from(sNormalized.toString(16).padStart(64, '0'), 'hex');
+        // When s is negated, recoveryId flips
+        recoveryIdOffset = 1;
+        logger.info({ 
+          accountIndex,
+          originalS: sBigInt.toString(16).slice(0, 16) + '...',
+          normalizedS: sNormalized.toString(16).slice(0, 16) + '...',
+        }, 'Normalized non-canonical s value');
+      }
       
       // 获取正确的地址（从公钥计算）
       const expectedAddress = ethers.computeAddress('0x' + publicKey.toString('hex')).toLowerCase();
@@ -549,7 +569,7 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
         
         if (recoveredAddress0 === expectedAddress) {
           logger.info({ accountIndex, recoveryId: 0 }, 'Correct recoveryId found');
-          return { signature, recoveryId: 0 };
+          return { signature: Buffer.concat([r, s]), recoveryId: 0 };
         }
       } catch (e) {
         // 继续尝试recoveryId = 1
@@ -568,23 +588,24 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
         
         if (recoveredAddress1 === expectedAddress) {
           logger.info({ accountIndex, recoveryId: 1 }, 'Correct recoveryId found');
-          return { signature, recoveryId: 1 };
+          return { signature: Buffer.concat([r, s]), recoveryId: 1 };
         }
       } catch (e) {
         // 两个都失败
       }
       
-      // 如果两个都不匹配，记录警告但使用 0 作为默认值
+      // 如果两个都不匹配，记录警告但使用 recoveryIdOffset 作为默认值
       logger.warn({ 
         accountIndex, 
         expectedAddress,
         r: r.toString('hex').slice(0, 16) + '...',
         s: s.toString('hex').slice(0, 16) + '...',
-      }, 'Unable to determine correct recoveryId, using 0 as default');
+        recoveryIdOffset,
+      }, 'Unable to determine correct recoveryId, using offset as default');
       
       return {
-        signature,
-        recoveryId: 0,
+        signature: Buffer.concat([r, s]),
+        recoveryId: recoveryIdOffset,
       };
     } catch (error) {
       logger.error({ error, accountIndex }, 'Error signing transaction');
