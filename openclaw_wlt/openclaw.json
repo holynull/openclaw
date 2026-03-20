@@ -295,7 +295,7 @@
           "requireMention": true
         }
       },
-      "groupPolicy": "allowlist",
+      "groupPolicy": "open",
       "streaming": "partial",
       "linkPreview": true
     },
@@ -305,7 +305,11 @@
       "appSecret": "${FEISHU_APP_SECRET}",
       "domain": "lark",
       "dmPolicy": "pairing",
-      "groupPolicy": "allowlist"
+      "groupPolicy": "open",
+      "streaming": "partial",
+      "commands": {
+        "nativeSkills": true
+      }
     }
   },
   "gateway": {

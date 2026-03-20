@@ -3,7 +3,7 @@ import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
 import crypto from 'crypto';
 import { EthWallet } from '@okxweb3/coin-ethereum';
-import { Wallet } from 'ethers';
+import { Wallet, ethers } from 'ethers';
 import fs from 'fs/promises';
 import path from 'path';
 
