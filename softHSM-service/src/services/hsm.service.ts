@@ -446,6 +446,7 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
       const secp256k1Params = Buffer.from('06052B8104000A', 'hex');
       
       // 将私钥导入为 EC 私钥对象
+      // 注意：由于 graphene-pk11 限制，我们使用 paramsEC 而不是 ecParams
       const importedKey = this.session!.create({
         class: pkcs11.ObjectClass.PRIVATE_KEY,
         keyType: pkcs11.KeyType.EC,
@@ -456,7 +457,7 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
         sign: true, // 允许签名
         label: keyLabel,
         id: Buffer.from(keyLabel),
-        ecParams: secp256k1Params, // secp256k1 曲线参数
+        paramsEC: secp256k1Params, // secp256k1 曲线参数（使用 paramsEC 而不是 ecParams）
         value: privateKeyBuffer, // EC 私钥值
       }).toType<pkcs11.PrivateKey>();
 
