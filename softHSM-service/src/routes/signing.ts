@@ -125,11 +125,19 @@ export async function signingRoutes(fastify: FastifyInstance) {
         );
 
         // 组装签名（r, s, v）
-        // 注意：这里需要正确解析 DER 编码的签名并提取 r, s
-        // 实际实现需要更复杂的逻辑
         const r = signature.subarray(0, 32).toString('hex');
         const s = signature.subarray(32, 64).toString('hex');
-        const v = recoveryId + 27; // 简化处理，实际需要根据 chainId 计算
+        
+        // 根据 EIP-155 规范计算 v 值
+        // v = chainId * 2 + 35 + recoveryId
+        const v = body.chainId * 2 + 35 + recoveryId;
+
+        logger.info({ 
+          accountIndex: body.accountIndex, 
+          chainId: body.chainId, 
+          recoveryId, 
+          v 
+        }, 'Signature assembled');
 
         unsignedTx.signature = {
           r: '0x' + r,
