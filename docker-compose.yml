@@ -213,6 +213,7 @@ services:
       - HSM_PIN=${HSM_PIN}
       - API_KEY_SALT=${API_KEY_SALT}
       - VALID_API_KEYS=${VALID_API_KEYS}
+      - API_KEY_PAIRS=${API_KEY_PAIRS}
       - AUDIT_ENABLED=true
       - AUDIT_LOG_PATH=/var/log/softHSM-service/audit.log
       - LOG_LEVEL=info

@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
 import { ethers } from 'ethers';
+import { apiKeyStore } from '../utils/api-key-store.js';
 
 // 安全配置
 const SECURITY_CONFIG = {
@@ -103,8 +104,26 @@ export async function requestSignatureMiddleware(
   }
 
   // 验证签名
+  // 从 JWT 中获取 apiKey，然后查找对应的 secret
+  const user = request.user as any;
+  if (!user || !user.apiKey) {
+    logger.warn('Request missing apiKey in JWT');
+    return reply.status(401).send({
+      success: false,
+      error: 'Invalid token: missing apiKey',
+    });
+  }
+
+  const apiSecret = apiKeyStore.getSecret(user.apiKey);
+  if (!apiSecret) {
+    logger.warn({ apiKey: user.apiKey }, 'API key not found in store');
+    return reply.status(401).send({
+      success: false,
+      error: 'API key not found or revoked',
+    });
+  }
+  
   const payload = JSON.stringify(request.body) + timestamp + nonce;
-  const apiSecret = process.env.API_KEY_SALT || ''; // 实际应该从数据库查询
   const expectedSignature = crypto
     .createHmac('sha256', apiSecret)
     .update(payload)

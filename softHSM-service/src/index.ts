@@ -8,6 +8,7 @@ import { signingRoutes } from './routes/signing.js';
 import { healthRoutes } from './routes/health.js';
 import { logger } from './utils/logger.js';
 import { HSMService } from './services/hsm.service.js';
+import { apiKeyStore } from './utils/api-key-store.js';
 
 const fastify = Fastify({
   logger: true,
@@ -47,6 +48,15 @@ try {
   logger.info('HSM Service initialized successfully');
 } catch (error) {
   logger.error({ error }, 'Failed to initialize HSM Service');
+  process.exit(1);
+}
+
+// 初始化 API Key Store
+try {
+  apiKeyStore.initialize();
+  logger.info('API Key Store initialized successfully');
+} catch (error) {
+  logger.error({ error }, 'Failed to initialize API Key Store');
   process.exit(1);
 }
 
