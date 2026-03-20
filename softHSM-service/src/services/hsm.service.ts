@@ -520,7 +520,7 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
     }
 
     try {
-      const { keyHandle } = await this.getOrCreateEthereumKey(accountIndex);
+      const { keyHandle, publicKey } = await this.getOrCreateEthereumKey(accountIndex);
 
       // 使用 ECDSA 签名
       const signature = this.session
@@ -529,11 +529,62 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
 
       logger.info({ accountIndex }, 'Transaction hash signed successfully');
 
-      // 注意：实际实现需要处理 recovery ID 的计算
-      // 这里简化处理，实际需要根据公钥恢复
+      // 正确计算 recoveryId：尝试两个可能的值，看哪个能恢复出正确的公钥
+      const r = signature.subarray(0, 32);
+      const s = signature.subarray(32, 64);
+      
+      // 获取正确的地址（从公钥计算）
+      const expectedAddress = ethers.computeAddress('0x' + publicKey.toString('hex')).toLowerCase();
+      
+      // 尝试 recoveryId = 0
+      try {
+        const recoveredAddress0 = ethers.recoverAddress(
+          messageHash,
+          {
+            r: '0x' + r.toString('hex'),
+            s: '0x' + s.toString('hex'),
+            v: 27, // recoveryId = 0
+          }
+        ).toLowerCase();
+        
+        if (recoveredAddress0 === expectedAddress) {
+          logger.info({ accountIndex, recoveryId: 0 }, 'Correct recoveryId found');
+          return { signature, recoveryId: 0 };
+        }
+      } catch (e) {
+        // 继续尝试recoveryId = 1
+      }
+      
+      // 尝试 recoveryId = 1
+      try {
+        const recoveredAddress1 = ethers.recoverAddress(
+          messageHash,
+          {
+            r: '0x' + r.toString('hex'),
+            s: '0x' + s.toString('hex'),
+            v: 28, // recoveryId = 1
+          }
+        ).toLowerCase();
+        
+        if (recoveredAddress1 === expectedAddress) {
+          logger.info({ accountIndex, recoveryId: 1 }, 'Correct recoveryId found');
+          return { signature, recoveryId: 1 };
+        }
+      } catch (e) {
+        // 两个都失败
+      }
+      
+      // 如果两个都不匹配，记录警告但使用 0 作为默认值
+      logger.warn({ 
+        accountIndex, 
+        expectedAddress,
+        r: r.toString('hex').slice(0, 16) + '...',
+        s: s.toString('hex').slice(0, 16) + '...',
+      }, 'Unable to determine correct recoveryId, using 0 as default');
+      
       return {
         signature,
-        recoveryId: 0, // 需要实际计算
+        recoveryId: 0,
       };
     } catch (error) {
       logger.error({ error, accountIndex }, 'Error signing transaction');
