@@ -305,12 +305,12 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
     const keyLabel = `eth-key-${accountIndex}`;
 
     try {
-      // 查找现有密钥
-      const objects = this.session.find({ label: keyLabel, class: pkcs11.ObjectClass.SECRET_KEY });
+      // 查找现有密钥 - 修改为查找 PRIVATE_KEY 而不是 SECRET_KEY
+      const objects = this.session.find({ label: keyLabel, class: pkcs11.ObjectClass.PRIVATE_KEY });
       
       if (objects.length > 0) {
         logger.info({ keyLabel }, 'Found existing key in HSM');
-        const secretKey = objects.items(0).toType<pkcs11.SecretKey>();
+        const privateKey = objects.items(0).toType<pkcs11.PrivateKey>();
         
         // 读取存储的公钥（从标签中恢复）
         // 注意：实际情况下应该将公钥也存储在 HSM 中
@@ -319,7 +319,7 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
         
         return {
           publicKey,
-          keyHandle: secretKey,
+          keyHandle: privateKey,
         };
       }
 
@@ -441,22 +441,24 @@ shred -u "${path.resolve(config.mnemonic.backupPath)}"  # More secure
 
       logger.info({ keyLabel, bufferLength: privateKeyBuffer.length }, 'Importing key to HSM...');
 
-      // ⚠️ 注意：这里我们使用对称密钥导入方式作为简化
-      // 生产环境建议使用更安全的密钥包装方式
+      // secp256k1 椭圆曲线参数 (OID: 1.3.132.0.10)
+      // DER 编码: 06 05 2B 81 04 00 0A
+      const secp256k1Params = Buffer.from('06052B8104000A', 'hex');
       
-      // 将私钥导入为 HSM 中的密钥对象
-      // 由于 PKCS#11 限制，我们将私钥存储为 SECRET_KEY
+      // 将私钥导入为 EC 私钥对象
       const importedKey = this.session!.create({
-        class: pkcs11.ObjectClass.SECRET_KEY,
-        keyType: pkcs11.KeyType.GENERIC_SECRET,
+        class: pkcs11.ObjectClass.PRIVATE_KEY,
+        keyType: pkcs11.KeyType.EC,
         token: true,
         private: true,
         sensitive: true,
         extractable: false, // 不可导出
+        sign: true, // 允许签名
         label: keyLabel,
         id: Buffer.from(keyLabel),
-        value: privateKeyBuffer,
-      }).toType<pkcs11.SecretKey>();
+        ecParams: secp256k1Params, // secp256k1 曲线参数
+        value: privateKeyBuffer, // EC 私钥值
+      }).toType<pkcs11.PrivateKey>();
 
       logger.info('✓ Key imported to HSM');
 
