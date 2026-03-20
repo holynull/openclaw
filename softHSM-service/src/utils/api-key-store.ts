@@ -3,6 +3,8 @@
  * 用于签名验证时查找对应的 secret
  */
 
+import crypto from 'crypto';
+
 interface ApiKeyInfo {
   apiKey: string;
   apiSecret: string;
@@ -42,7 +44,6 @@ class ApiKeyStore {
    * 添加 API Key/Secret 对
    */
   addKey(apiKey: string, apiSecret: string) {
-    const crypto = require('crypto');
     const salt = process.env.API_KEY_SALT || '';
     
     // 计算 hash（用于登录验证）
