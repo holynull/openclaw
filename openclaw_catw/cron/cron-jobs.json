@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "blockchain-security-daily-report",
+      "name": "每日区块链安全报告",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "请执行以下任务：\n\n1. 搜索并分析最近24小时的区块链安全事件（中文报告）\n\n包含：\n- DeFi协议攻击/漏洞利用\n- 智能合约安全审计发现\n- 交易所安全事件\n- 钱包安全漏洞\n- 新威胁和攻击手法\n\n每个事件包含：标题、时间、概述、项目名、影响金额、攻击手法、当前状态、链接\n按严重程度排序。如无重大事件说明行业平稳。\n\n2. 将完整报告保存到文件 /tmp/blockchain-report-$(date +%Y%m%d-%H%M%S).txt\n\n3. 使用 bash 工具执行命令发送报告到飞书：/home/node/.openclaw/scripts/send-to-feishu.sh <刚才保存的报告文件路径>"
+      },
+      "delivery": {
+        "mode": "none"
+      }
+    }
+  ]
+}

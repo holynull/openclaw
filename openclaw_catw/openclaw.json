@@ -366,6 +366,15 @@
       ]
     }
   },
+  "cron": {
+    "enabled": true,
+    "maxConcurrentRuns": 1,
+    "sessionRetention": "24h",
+    "runLog": {
+      "maxBytes": "2mb",
+      "keepLines": 2000
+    }
+  },
   "plugins": {
     "allow": [
       "blockchain-tools",
