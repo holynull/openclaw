@@ -1,13 +1,16 @@
 {
   "meta": {
     "lastTouchedVersion": "2026.3.14",
-    "lastTouchedAt": "2026-03-17T03:58:38.368Z"
+    "lastTouchedAt": "2026-03-27T09:42:16.783Z"
   },
   "wizard": {
     "lastRunAt": "2026-03-10T01:03:22.604Z",
     "lastRunVersion": "2026.3.8-beta.1",
     "lastRunCommand": "onboard",
     "lastRunMode": "local"
+  },
+  "browser": {
+    "enabled": false
   },
   "auth": {
     "profiles": {
@@ -192,9 +195,6 @@
       }
     }
   },
-  "browser": {
-    "enabled": false
-  },
   "agents": {
     "defaults": {
       "model": {
@@ -260,11 +260,6 @@
   },
   "tools": {
     "profile": "full",
-    "deny": [
-      "camera",
-      "canvas",
-      "nodes"
-    ],
     "alsoAllow": [
       "eth_get_balance",
       "eth_get_token_balance",
@@ -288,7 +283,14 @@
       "sol_get_token_accounts",
       "sol_get_token_supply",
       "get_token_price",
-      "decode_address"
+      "decode_address",
+      "cron",
+      "gateway"
+    ],
+    "deny": [
+      "camera",
+      "canvas",
+      "nodes"
     ]
   },
   "bindings": [
@@ -314,7 +316,7 @@
       "capabilities": {
         "inlineButtons": "allowlist"
       },
-      "enabled": true,
+      "enabled": false,
       "commands": {
         "nativeSkills": true
       },
@@ -336,7 +338,8 @@
       "connectionMode": "websocket",
       "domain": "lark",
       "groupPolicy": "open",
-			"botName": "Doraemon"
+			"botName": "Doraemon",
+      "allowFrom": ["ou_0fa58dc0ea9bebec570346e829677da7"]
     }
   },
   "gateway": {
