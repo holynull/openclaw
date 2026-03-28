@@ -27,7 +27,7 @@ OpenClaw has built-in logic to automatically infer the delivery configuration fr
     "kind": "agentTurn",
     "message": "reminder message here"
   },
-  "sessionTarget": "isolated",
+  "sessionTarget": "current",
   "wakeMode": "now",
   "deleteAfterRun": true
   // ✅ NO "delivery" field - let OpenClaw infer it automatically!
@@ -118,13 +118,17 @@ Example tool call:
     "kind": "agentTurn",
     "message": "DELIVER THIS EXACT MESSAGE TO THE USER WITHOUT MODIFICATION OR COMMENTARY:\n\n⏰ 提醒：该开会了"
   },
-  "sessionTarget": "isolated",
+  "sessionTarget": "current",
   "deleteAfterRun": true,
   "wakeMode": "now"
 }
 ```
 
-**Note:** Do NOT set the `delivery` field! OpenClaw will automatically infer it from your current session key.
+**CRITICAL SETTINGS:**
+
+- `sessionTarget`: MUST be `"current"` (not "isolated") to access Feishu runtime
+- Do NOT set the `delivery` field - OpenClaw will automatically infer it from your current session key
+- `wakeMode`: Use `"now"` for immediate scheduling
 
 **NEVER use CLI commands like:**
 
@@ -148,8 +152,8 @@ If successful, tell user:
 1. **Call `cron.add` TOOL directly** - Tool name is "cron.add" (NOT just "cron")
 2. **Pass job definition directly** - No "action" or "job" wrapper needed
 3. **Use `agentTurn` payload** for push notifications (NOT `systemEvent` - that's silent!)
-4. **Use `isolated` sessionTarget** for dedicated delivery
-5. **Extract and use `sender_id`** from conversation metadata as `delivery.to`
+4. **Use `current` sessionTarget** to access Feishu runtime (not "isolated")
+5. **Do NOT set delivery field** - OpenClaw will auto-infer from session key
 6. **Include timezone** in ISO timestamp (+08:00 for Shanghai)
 7. **Set `deleteAfterRun: true`** for one-time reminders
 8. **Set `wakeMode: "now"`** for immediate scheduling
@@ -174,21 +178,6 @@ If successful, tell user:
 **If you find yourself typing "openclaw cron" or "exec", STOP IMMEDIATELY and use the `cron` TOOL instead.**
 
 ## Time Calculation Examples
-
-**IMPORTANT: Extract sender_id from conversation metadata**
-
-Every Feishu message includes metadata like:
-
-```json
-{
-  "message_id": "om_x...",
-  "sender_id": "ou_xxx...",
-  "timestamp": "..."
-}
-```
-
-**Use this `sender_id` as `delivery.to` to ensure the reminder goes to the right person.**
-**IMPORTANT: Extract the actual sender_id from the current session key (the part after the last colon).**
 
 **Relative time (from current time):**
 
@@ -264,18 +253,13 @@ This ensures the reminder is clean and direct.
     "kind": "agentTurn",
     "message": "DELIVER THIS EXACT MESSAGE TO THE USER WITHOUT MODIFICATION OR COMMENTARY:\n\n⏰ 提醒：该开会了"
   },
-  "sessionTarget": "isolated",
-  "delivery": {
-    "mode": "announce",
-    "channel": "feishu",
-    "to": "<sender_id_from_session_key>"
-  },
+  "sessionTarget": "current",
   "deleteAfterRun": true,
   "wakeMode": "now"
 }
 ```
 
-**Important:** Extract the `sender_id` from the current session key (the part after the last colon, starting with `ou_`) and use it as `delivery.to`.
+**Note:** Do NOT set the `delivery` field - OpenClaw will automatically infer it from your current session key.
 
 3. If success, reply: "好的，已设置 17:01 的提醒（开会）"
 4. At 17:01, user receives Feishu push notification: "⏰ 提醒：该开会了"
