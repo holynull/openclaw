@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+# Clear VSCode debugger NODE_OPTIONS to prevent debugger from attaching during git hooks
+unset NODE_OPTIONS
+
 # Load nvm if available
 if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
   export NVM_DIR="$HOME/.nvm"
