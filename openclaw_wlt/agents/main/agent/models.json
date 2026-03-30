@@ -1,0 +1,115 @@
+{
+  "providers": {
+    "gptsapi": {
+      "baseUrl": "https://api.gptsapi.net/v1",
+      "apiKey": "${GPTSAPI_KEY}",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "claude-sonnet-4-6",
+          "name": "Claude Sonnet 4.6 via gptsapi",
+          "reasoning": false,
+          "input": ["text"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "api": "openai-completions"
+        },
+        {
+          "id": "gpt-4o",
+          "name": "GPT 4o via gptsapi",
+          "reasoning": false,
+          "input": ["text"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 128000,
+          "maxTokens": 8192,
+          "api": "openai-completions"
+        }
+      ]
+    },
+    "maynor1024-anthropic": {
+      "baseUrl": "https://apipro.maynor1024.live/v1",
+      "apiKey": "${MAYNOR1024_KEY}",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "claude-sonnet-4-6",
+          "name": "Claude Sonnet 4.6 via maynor1024",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "api": "openai-completions"
+        },
+        {
+          "id": "claude-sonnet-4-5-20250929",
+          "name": "Claude Sonnet 4.5 via maynor1024",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "api": "openai-completions"
+        }
+      ]
+    },
+    "maynor1024-openai": {
+      "baseUrl": "https://apipro.maynor1024.live/v1",
+      "apiKey": "${MAYNOR1024_KEY}",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "gpt-4o",
+          "name": "GPT 4o via maynor1024",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 128000,
+          "maxTokens": 8192,
+          "api": "openai-completions"
+        },
+        {
+          "id": "claude-sonnet-4-5-20250929",
+          "name": "Claude Sonnet 4.5 via maynor1024-openai",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "api": "openai-completions"
+        }
+      ]
+    }
+  }
+}
