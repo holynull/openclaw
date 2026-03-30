@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "profiles": {
+    "openai:default": {
+      "type": "api_key",
+      "provider": "openai",
+      "keyRef": {
+        "source": "env",
+        "provider": "default",
+        "id": "OPENAI_API_KEY"
+      }
+    },
+    "gptsapi:default": {
+      "type": "api_key",
+      "provider": "gptsapi",
+      "keyRef": {
+        "source": "env",
+        "provider": "default",
+        "id": "GPTSAPI_KEY"
+      }
+    },
+    "maynor1024-anthropic:default": {
+      "type": "api_key",
+      "provider": "maynor1024-anthropic",
+      "keyRef": {
+        "source": "env",
+        "provider": "default",
+        "id": "MAYNOR1024_KEY"
+      }
+    },
+    "maynor1024-openai:default": {
+      "type": "api_key",
+      "provider": "maynor1024-openai",
+      "keyRef": {
+        "source": "env",
+        "provider": "default",
+        "id": "MAYNOR1024_KEY"
+      }
+    }
+  },
+  "lastGood": {
+    "gptsapi": "gptsapi:default",
+    "maynor1024-anthropic": "maynor1024-anthropic:default",
+    "maynor1024-openai": "maynor1024-openai:default"
+  },
+  "usageStats": {
+    "openai:default": {
+      "lastUsed": 1772417150511,
+      "errorCount": 0
+    },
+    "maynor1024-anthropic:default": {
+      "lastUsed": 1773718419749,
+      "errorCount": 0
+    },
+    "gptsapi:default": {
+      "lastUsed": 1772590206584,
+      "errorCount": 0
+    }
+  }
+}
