@@ -1,0 +1,27 @@
+{
+  "name": "@openclaw/bridgers-dex",
+  "version": "1.0.0",
+  "description": "Bridgers DEX integration for cross-chain token swaps",
+  "type": "module",
+  "main": "./index.ts",
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.48",
+    "axios": "^1.7.2"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "keywords": [
+    "bridgers",
+    "dex",
+    "cross-chain",
+    "swap",
+    "defi",
+    "openclaw",
+    "plugin"
+  ],
+  "author": "OpenClaw",
+  "license": "MIT"
+}

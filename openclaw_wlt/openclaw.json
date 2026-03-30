@@ -202,12 +202,6 @@
       "match": {
         "channel": "feishu"
       }
-    },
-    {
-      "agentId": "main",
-      "match": {
-        "channel": "telegram"
-      }
     }
   ],
   "agents": {
@@ -225,13 +219,21 @@
             "eth_get_address",
             "eth_get_balance",
             "eth_get_token_balance",
+            "eth_get_token_allowance",
+            "eth_approve_token",
             "eth_estimate_gas",
             "eth_transfer",
             "eth_transfer_token",
+            "eth_send_transaction",
             "eth_sign_message",
             "eth_get_transaction",
             "btc_get_address",
-            "sol_get_address"
+            "sol_get_address",
+            "bridgers_get_tokens",
+            "bridgers_get_quote",
+            "bridgers_get_swap_data",
+            "bridgers_create_order",
+            "bridgers_query_orders"
           ]
         }
       }
@@ -281,23 +283,7 @@
   },
   "channels": {
     "telegram": {
-      "capabilities": {
-        "inlineButtons": "allowlist"
-      },
-      "enabled": true,
-      "commands": {
-        "nativeSkills": true
-      },
-      "dmPolicy": "pairing",
-      "botToken": "${TELEGRAM_BOT_TOKEN}",
-      "groups": {
-        "*": {
-          "requireMention": true
-        }
-      },
-      "groupPolicy": "open",
-      "streaming": "partial",
-      "linkPreview": true
+      "enabled": false
     },
     "feishu": {
       "enabled": true,
@@ -342,8 +328,8 @@
   "plugins": {
     "allow": [
       "wallet-manager",
-      "telegram",
-      "feishu"
+      "feishu",
+      "bridgers-dex"
     ],
     "entries": {
       "wallet-manager": {
@@ -351,6 +337,13 @@
       },
       "feishu": {
         "enabled": true
+      },
+      "bridgers-dex": {
+        "enabled": true,
+        "config": {
+          "sourceFlag": "catwallet_openclaw",
+          "sourceType": "catwallet_openclaw"
+        }
       }
     }
   }

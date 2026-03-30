@@ -1,0 +1,25 @@
+{
+  "id": "bridgers-dex",
+  "name": "Bridgers DEX",
+  "description": "Cross-chain token swaps via Bridgers decentralized exchange (39+ chains)",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "sourceFlag": {
+        "type": "string",
+        "description": "Source flag for API requests (default: widget)",
+        "default": "widget"
+      },
+      "sourceType": {
+        "type": "string",
+        "description": "Source type for API requests (default: H5)",
+        "default": "H5"
+      },
+      "equipmentNo": {
+        "type": "string",
+        "description": "Equipment identifier (optional)"
+      }
+    }
+  }
+}
