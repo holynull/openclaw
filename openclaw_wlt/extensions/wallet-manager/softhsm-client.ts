@@ -136,6 +136,7 @@ export class SoftHSMClient {
     nonce: number;
     data?: string;
     accountIndex?: number;
+    txType?: number;
   }): Promise<{
     signedTransaction: string;
     transactionHash: string;

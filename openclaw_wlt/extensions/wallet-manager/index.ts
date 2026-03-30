@@ -430,6 +430,237 @@ export default function (api: any) {
     },
   }, { optional: true });
 
+  // Ethereum: Get Token Allowance
+  api.registerTool({
+    name: "eth_get_token_allowance",
+    description: "Check ERC20 token allowance for a spender. Returns the amount of tokens that the spender is allowed to transfer on behalf of the owner. chainId is REQUIRED.",
+    parameters: Type.Object({
+      tokenAddress: Type.String({ description: "ERC20 token contract address (REQUIRED)" }),
+      ownerAddress: Type.String({ description: "Token owner's address (REQUIRED)" }),
+      spenderAddress: Type.String({ description: "Spender's address (contract or wallet that will transfer tokens) (REQUIRED)" }),
+      chainId: Type.Number({ description: "Chain ID (REQUIRED): 1=Ethereum, 137=Polygon, 42161=Arbitrum, 10=Optimism, 8453=Base, 56=BSC, etc." }),
+      rpcUrl: Type.Optional(Type.String({ description: "Custom RPC endpoint URL." })),
+    }),
+    async execute(_id: any, params: any) {
+      try {
+        const provider = getProvider(params.chainId, params.rpcUrl);
+        
+        // ERC20 allowance function ABI
+        const erc20Abi = [
+          "function allowance(address owner, address spender) view returns (uint256)",
+          "function decimals() view returns (uint8)",
+          "function symbol() view returns (string)"
+        ];
+        
+        const tokenContract = new ethers.Contract(params.tokenAddress, erc20Abi, provider);
+        
+        // Get allowance and token info
+        const [allowance, decimals, symbol] = await Promise.all([
+          tokenContract.allowance(params.ownerAddress, params.spenderAddress),
+          tokenContract.decimals(),
+          tokenContract.symbol()
+        ]);
+        
+        const allowanceWithDecimals = allowance.toString();
+        const allowanceFormatted = ethers.formatUnits(allowance, decimals);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                tokenAddress: params.tokenAddress,
+                owner: params.ownerAddress,
+                spender: params.spenderAddress,
+                allowance: allowanceWithDecimals,  // raw value with decimals
+                allowanceFormatted,  // human-readable
+                decimals: Number(decimals),
+                symbol,
+                chainId: params.chainId,
+                isUnlimited: allowance >= ethers.MaxUint256 / 2n,  // Check if near max uint
+              }, null, 2),
+            },
+          ],
+        };
+      } catch (error: any) {
+        console.error("Error in eth_get_token_allowance:", error);
+        return {
+          content: [{ type: "text", text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    },
+  }, { optional: true });
+
+  // Ethereum: Approve Token
+  api.registerTool({
+    name: "eth_approve_token",
+    description: "Approve ERC20 token spending allowance for a spender (typically a DEX or bridge contract). Transaction is automatically broadcast and signed by SoftHSM. chainId is REQUIRED.",
+    parameters: Type.Object({
+      tokenAddress: Type.String({ description: "ERC20 token contract address (REQUIRED)" }),
+      spenderAddress: Type.String({ description: "Spender's address (contract that will transfer tokens) (REQUIRED)" }),
+      amount: Type.String({ description: "Amount to approve WITH decimals (REQUIRED, e.g., '1000000' for 1 USDT with 6 decimals). Use 'unlimited' for maximum approval." }),
+      chainId: Type.Number({ description: "Chain ID (REQUIRED): 1=Ethereum, 137=Polygon, 42161=Arbitrum, 10=Optimism, 8453=Base, 56=BSC, etc." }),
+      gasPreset: Type.Optional(Type.Union([
+        Type.Literal("low"),
+        Type.Literal("medium"),
+        Type.Literal("high"),
+      ], { description: "Gas fee preset: 'low' (slow), 'medium' (standard), 'high' (fast). Default: medium" })),
+      maxFeePerGas: Type.Optional(Type.String({ description: "Max fee per gas in gwei (for EIP-1559). Overrides gasPreset if provided." })),
+      maxPriorityFeePerGas: Type.Optional(Type.String({ description: "Max priority fee (tip) in gwei (for EIP-1559)." })),
+      gasPrice: Type.Optional(Type.String({ description: "Gas price in gwei (for legacy transactions only)." })),
+      gasLimit: Type.Optional(Type.String({ description: "Manual gas limit. If not provided, will be estimated automatically." })),
+      accountIndex: Type.Optional(Type.Number({ description: "Account index. Default: 0" })),
+      rpcUrl: Type.Optional(Type.String({ description: "Custom RPC endpoint URL." })),
+    }),
+    async execute(_id: any, params: any) {
+      try {
+        const accountIndex = params.accountIndex ?? 0;
+        const client = getSoftHSMClient();
+        const fromAddress = await client.getEthereumAddress(accountIndex);
+        const provider = getProvider(params.chainId, params.rpcUrl);
+        
+        console.log(`[wallet-manager] Approving ${params.amount} tokens at ${params.tokenAddress} for spender ${params.spenderAddress}`);
+        
+        // Determine approval amount
+        let approvalAmount: bigint;
+        if (params.amount.toLowerCase() === 'unlimited' || params.amount.toLowerCase() === 'max') {
+          approvalAmount = ethers.MaxUint256;
+        } else {
+          approvalAmount = BigInt(params.amount);
+        }
+        
+        // ERC20 approve function signature
+        const erc20Interface = new ethers.Interface([
+          "function approve(address spender, uint256 amount) returns (bool)"
+        ]);
+        
+        const approveData = erc20Interface.encodeFunctionData("approve", [
+          params.spenderAddress,
+          approvalAmount
+        ]);
+        
+        // Get nonce
+        const nonce = await provider.getTransactionCount(fromAddress, "pending");
+        
+        // Estimate gas
+        let gasLimit = params.gasLimit;
+        if (!gasLimit) {
+          try {
+            const estimated = await provider.estimateGas({
+              from: fromAddress,
+              to: params.tokenAddress,
+              data: approveData,
+            });
+            gasLimit = (estimated * 120n / 100n).toString();  // Add 20% buffer
+          } catch (error: any) {
+            console.log(`[wallet-manager] Gas estimation failed: ${error.message}. Using default.`);
+            gasLimit = "100000";  // Default for ERC20 approve
+          }
+        }
+        
+        // Prepare transaction parameters
+        const signParams: any = {
+          chainId: params.chainId,
+          to: params.tokenAddress,
+          value: "0",
+          gasLimit,
+          nonce,
+          data: approveData,
+          accountIndex,
+        };
+        
+        // Gas fee handling
+        const gasPreset = params.gasPreset || 'medium';
+        const multipliers = { low: 1.0, medium: 1.1, high: 1.3 };
+        const multiplier = multipliers[gasPreset];
+        
+        let txType: number;
+        
+        // Determine transaction type (EIP-1559 or legacy)
+        if (params.maxFeePerGas || params.maxPriorityFeePerGas) {
+          // EIP-1559 transaction
+          txType = 2;
+          
+          let maxFeePerGas = params.maxFeePerGas;
+          let maxPriorityFeePerGas = params.maxPriorityFeePerGas;
+          
+          if (!maxFeePerGas || !maxPriorityFeePerGas) {
+            const feeData = await provider.getFeeData();
+            if (!maxFeePerGas) {
+              const baseFee = feeData.maxFeePerGas || 0n;
+              maxFeePerGas = ethers.formatUnits(BigInt(Math.floor(Number(baseFee) * multiplier)), 'gwei');
+            }
+            if (!maxPriorityFeePerGas) {
+              const basePriority = feeData.maxPriorityFeePerGas || 0n;
+              maxPriorityFeePerGas = ethers.formatUnits(BigInt(Math.floor(Number(basePriority) * multiplier)), 'gwei');
+            }
+          }
+          
+          signParams.maxFeePerGas = ethers.parseUnits(maxFeePerGas, 'gwei').toString();
+          signParams.maxPriorityFeePerGas = ethers.parseUnits(maxPriorityFeePerGas, 'gwei').toString();
+        } else {
+          // Legacy transaction
+          txType = 0;
+          
+          let gasPrice = params.gasPrice;
+          if (!gasPrice) {
+            const feeData = await provider.getFeeData();
+            const basePrice = feeData.gasPrice || 0n;
+            gasPrice = ethers.formatUnits(BigInt(Math.floor(Number(basePrice) * multiplier)), 'gwei');
+          }
+          
+          signParams.gasPrice = ethers.parseUnits(gasPrice, 'gwei').toString();
+        }
+        
+        signParams.txType = txType;
+        
+        // Debug: log signing parameters
+        console.log('[wallet-manager] Approval signing parameters:', JSON.stringify(signParams, null, 2));
+        
+        // Sign transaction using SoftHSM
+        const result = await client.signEthereumTransaction(signParams);
+        
+        console.log(`[wallet-manager] Approval signed, broadcasting transaction...`);
+        
+        // Broadcast transaction
+        const tx = await provider.broadcastTransaction(result.signedTransaction);
+        const txHash = tx.hash;
+        
+        console.log(`[wallet-manager] Approval transaction broadcast: ${txHash}`);
+        
+        // Wait for confirmation
+        const receipt = await tx.wait(1);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                tokenAddress: params.tokenAddress,
+                spender: params.spenderAddress,
+                approvedAmount: params.amount === 'unlimited' ? 'unlimited' : params.amount,
+                from: fromAddress,
+                transactionHash: txHash,
+                status: receipt?.status === 1 ? 'success' : 'failed',
+                blockNumber: receipt?.blockNumber,
+                gasUsed: receipt?.gasUsed?.toString(),
+                txType: txType === 2 ? 'EIP-1559' : 'Legacy',
+                chainId: params.chainId,
+              }, null, 2),
+            },
+          ],
+        };
+      } catch (error: any) {
+        console.error("Error in eth_approve_token:", error);
+        return {
+          content: [{ type: "text", text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    },
+  }, { optional: true });
+
   // Ethereum: Transfer ETH
   api.registerTool({
     name: "eth_transfer",
@@ -889,6 +1120,176 @@ export default function (api: any) {
         };
       } catch (error: any) {
         console.error("Error in btc_get_address:", error);
+        return {
+          content: [{ type: "text", text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    },
+  }, { optional: true });
+
+  // Ethereum: Send Transaction (Generic Contract Call)
+  api.registerTool({
+    name: "eth_send_transaction",
+    description: "Send a generic Ethereum transaction with custom calldata. Useful for interacting with smart contracts (e.g., DEX swaps, NFT transfers). Automatically signs with SoftHSM and broadcasts to network.",
+    parameters: Type.Object({
+      to: Type.String({ description: "Target contract address (REQUIRED)" }),
+      data: Type.String({ description: "Transaction calldata (REQUIRED, hex string starting with 0x)" }),
+      value: Type.Optional(Type.String({ description: "ETH value to send with transaction (default: '0x0', hex string)" })),
+      chainId: Type.Number({ description: "Chain ID (REQUIRED): 1=Ethereum, 137=Polygon, 42161=Arbitrum, 10=Optimism, 8453=Base, 56=BSC, etc." }),
+      gasPreset: Type.Optional(Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high')], { description: "Gas price preset: 'low', 'medium', 'high'. Default: 'medium'" })),
+      accountIndex: Type.Optional(Type.Number({ description: "Account index (0-based). Default: 0" })),
+      gasLimit: Type.Optional(Type.String({ description: "Gas limit (hex or decimal string). If not provided, will be estimated." })),
+      maxFeePerGas: Type.Optional(Type.String({ description: "Max fee per gas in gwei for EIP-1559. Overrides gasPreset." })),
+      maxPriorityFeePerGas: Type.Optional(Type.String({ description: "Max priority fee per gas in gwei for EIP-1559. Overrides gasPreset." })),
+      gasPrice: Type.Optional(Type.String({ description: "Gas price in gwei for legacy transactions. Overrides gasPreset." })),
+      nonce: Type.Optional(Type.Number({ description: "Transaction nonce. Auto-fetched if not provided." })),
+    }),
+    async execute(_id: any, params: any) {
+      try {
+        const accountIndex = params.accountIndex ?? 0;
+        const client = getSoftHSMClient();
+        const fromAddress = await client.getEthereumAddress(accountIndex);
+        
+        const provider = getProvider(params.chainId);
+        const networkChainId = (await provider.getNetwork()).chainId;
+        
+        // Get nonce if not provided
+        let nonce = params.nonce;
+        if (nonce === undefined) {
+          nonce = await provider.getTransactionCount(fromAddress, 'pending');
+        }
+        
+        // Parse value (default to 0)
+        // Convert hex to decimal string for SoftHSM
+        let value = '0';
+        if (params.value) {
+          try {
+            // Handle both hex (0x...) and decimal strings
+            const valueBigInt = typeof params.value === 'string' && params.value.startsWith('0x')
+              ? BigInt(params.value)
+              : BigInt(params.value);
+            value = valueBigInt.toString();  // Convert to decimal string
+          } catch (error: any) {
+            throw new Error(`Invalid value format: ${params.value}. Must be hex (0x...) or decimal string.`);
+          }
+        }
+        
+        // Estimate gas limit if not provided
+        let gasLimit = params.gasLimit;
+        if (!gasLimit) {
+          try {
+            const estimated = await provider.estimateGas({
+              from: fromAddress,
+              to: params.to,
+              data: params.data,
+              value: params.value || '0x0',  // estimateGas needs hex format
+            });
+            gasLimit = estimated.toString();
+          } catch (error: any) {
+            console.error('[wallet-manager] Gas estimation failed:', error.message);
+            throw new Error(`Gas estimation failed: ${error.message}. Please provide gasLimit manually.`);
+          }
+        }
+        
+        // Gas preset multipliers
+        const gasPresetMultipliers = {
+          low: 0.8,
+          medium: 1.0,
+          high: 1.3,
+        };
+        const gasPreset = params.gasPreset || 'medium';
+        const multiplier = gasPresetMultipliers[gasPreset as keyof typeof gasPresetMultipliers];
+        
+        let signParams: any = {
+          chainId: Number(networkChainId),
+          to: params.to,
+          data: params.data,
+          value: value,
+          nonce,
+          gasLimit,
+          accountIndex,
+        };
+        
+        let txType: number;
+        
+        // Determine transaction type (EIP-1559 or legacy)
+        if (params.maxFeePerGas || params.maxPriorityFeePerGas) {
+          txType = 2;
+          
+          let maxFeePerGas = params.maxFeePerGas;
+          let maxPriorityFeePerGas = params.maxPriorityFeePerGas;
+          
+          if (!maxFeePerGas || !maxPriorityFeePerGas) {
+            const feeData = await provider.getFeeData();
+            if (!maxFeePerGas) {
+              const baseFee = feeData.maxFeePerGas || 0n;
+              maxFeePerGas = ethers.formatUnits(BigInt(Math.floor(Number(baseFee) * multiplier)), 'gwei');
+            }
+            if (!maxPriorityFeePerGas) {
+              const priorityFee = feeData.maxPriorityFeePerGas || 0n;
+              maxPriorityFeePerGas = ethers.formatUnits(BigInt(Math.floor(Number(priorityFee) * multiplier)), 'gwei');
+            }
+          }
+          
+          signParams.maxFeePerGas = ethers.parseUnits(maxFeePerGas, 'gwei').toString();
+          signParams.maxPriorityFeePerGas = ethers.parseUnits(maxPriorityFeePerGas, 'gwei').toString();
+        } else {
+          txType = 0;
+          
+          let gasPrice = params.gasPrice;
+          if (!gasPrice) {
+            const feeData = await provider.getFeeData();
+            const baseGasPrice = feeData.gasPrice || 0n;
+            gasPrice = ethers.formatUnits(BigInt(Math.floor(Number(baseGasPrice) * multiplier)), 'gwei');
+          }
+          
+          signParams.gasPrice = ethers.parseUnits(gasPrice, 'gwei').toString();
+        }
+        
+        signParams.txType = txType;
+        
+        // Debug: log signing parameters
+        console.log('[wallet-manager] Signing parameters:', JSON.stringify(signParams, null, 2));
+        
+        // Sign transaction
+        const result = await client.signEthereumTransaction(signParams);
+        
+        console.log('[wallet-manager] Signed transaction result:', result.transactionHash);
+        
+        // Broadcast transaction
+        const txResponse = await provider.broadcastTransaction(result.signedTransaction);
+        
+        // Wait for transaction to be mined (with timeout)
+        let receipt;
+        try {
+          receipt = await txResponse.wait(1, 120000); // 120 seconds timeout
+        } catch (error: any) {
+          console.error('[wallet-manager] Transaction wait error:', error);
+          // Transaction might still be pending
+        }
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                success: true,
+                transactionHash: txResponse.hash,
+                from: fromAddress,
+                to: params.to,
+                chainId: Number(networkChainId),
+                nonce,
+                gasLimit,
+                blockNumber: receipt?.blockNumber,
+                gasUsed: receipt?.gasUsed?.toString(),
+                status: receipt?.status === 1 ? 'success' : receipt?.status === 0 ? 'failed' : 'pending',
+              }, null, 2),
+            },
+          ],
+        };
+      } catch (error: any) {
+        console.error("Error in eth_send_transaction:", error);
         return {
           content: [{ type: "text", text: `Error: ${error.message}` }],
           isError: true,
