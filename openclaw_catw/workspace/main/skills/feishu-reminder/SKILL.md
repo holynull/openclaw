@@ -1,286 +1,123 @@
 ---
 name: feishu-reminder
-description: Schedule Feishu reminders using OpenClaw cron tool. Handles natural language like "1分钟后提醒我开会" and creates timed push notifications.
+description: |
+  🚨 WHEN USER SAYS "提醒大家" → ADD "all" AS 3RD PARAM 🚨
+
+  Quick rule:
+  "提醒大家X" → ...sh oc_xxx '⏰ 提醒大家：X' all
+  "提醒我X" → ...sh oc_xxx '⏰ 提醒：X' ou_sender
+  "提醒X" → ...sh oc_xxx '⏰ 提醒：X'
+
+  Example for "2分钟后提醒大家开会":
+  {"tool":"cron.add","name":"提醒：开会","schedule":{"kind":"at","at":"2026-03-30T14:00:00+08:00"},"payload":{"kind":"agentTurn","message":"使用 bash 工具执行命令发送飞书提醒：/home/node/.openclaw/scripts/send-feishu-reminder.sh oc_xxx '⏰ 提醒大家：开会' all"},"delivery":{"mode":"none"},"sessionTarget":"current","deleteAfterRun":true,"wakeMode":"now"}
+
+  FORBIDDEN: "请在群里发送", message tool. ONLY bash command.
 ---
 
 # Feishu Reminder Skill
 
-Schedule push notifications to Feishu using OpenClaw's cron scheduler.
+## Critical Rule
 
-## ⚠️ CRITICAL: Use cron.add TOOL, NOT CLI
+**When user says "提醒大家" or "提醒所有人", YOU MUST add "all" as the 3rd parameter!**
 
-**YOU MUST call the `cron.add` TOOL directly with job parameters.**
+Script format:
 
-## 🚨 CRITICAL: Let OpenClaw Auto-Infer the Delivery Configuration!
+```
+/home/node/.openclaw/scripts/send-feishu-reminder.sh <chat_id> '<text>' [mention]
+```
 
-**IMPORTANT:** Do NOT manually set the `delivery` field in your cron job!
+Parameters:
 
-OpenClaw has built-in logic to automatically infer the delivery configuration from the current session key. If you manually set `delivery.channel` or `delivery.to`, it will DISABLE the auto-inference and cause delivery to fail!
+- `<chat_id>`: oc_xxx (group) or ou_xxx (private)
+- `'<text>'`: Reminder message
+- `[mention]`: Optional 3rd param
+  - `all` → @所有人 (when user says 提醒大家)
+  - `ou_xxx` → @specific user (when user says 提醒我, use sender's ou\_)
+  - omit → no @
 
-**✅ CORRECT APPROACH - Let the tool infer delivery:**
+## Examples
+
+### Private chat reminder
+
+User: "一分钟后提醒我开会"
+
+```
+/home/node/.openclaw/scripts/send-feishu-reminder.sh ou_xxx '⏰ 提醒：开会'
+```
+
+### Group reminder without @
+
+User: "一分钟后提醒开会"
+
+```
+/home/node/.openclaw/scripts/send-feishu-reminder.sh oc_xxx '⏰ 提醒：开会'
+```
+
+### Group reminder @all
+
+User: "一分钟后提醒大家开会"
+
+```
+/home/node/.openclaw/scripts/send-feishu-reminder.sh oc_xxx '⏰ 提醒大家：开会' all
+```
+
+### Group reminder @me
+
+User: "一分钟后提醒我开会" (in group)
+
+```
+/home/node/.openclaw/scripts/send-feishu-reminder.sh oc_xxx '⏰ 提醒：开会' ou_sender
+```
+
+## Complete Tool Call Example
+
+For user message: "2分钟后提醒大家多运动"
 
 ```json
 {
   "tool": "cron.add",
-  "schedule": { "kind": "at", "at": "ISO8601_TIME" },
+  "name": "提醒：多运动",
+  "schedule": {
+    "kind": "at",
+    "at": "2026-03-30T12:45:00+08:00"
+  },
   "payload": {
     "kind": "agentTurn",
-    "message": "reminder message here"
+    "message": "使用 bash 工具执行命令发送飞书提醒：/home/node/.openclaw/scripts/send-feishu-reminder.sh oc_53d1a541f08d2d9f2e8c3c79a1f12fc3 '⏰ 提醒大家：多运动' all"
+  },
+  "delivery": {
+    "mode": "none"
   },
   "sessionTarget": "current",
-  "wakeMode": "now",
-  "deleteAfterRun": true
-  // ✅ NO "delivery" field - let OpenClaw infer it automatically!
+  "deleteAfterRun": true,
+  "wakeMode": "now"
 }
 ```
 
-**❌ WRONG APPROACH - Manually setting delivery:**
+**Key point: Notice the "all" at the end of the bash command!**
 
-```json
-{
-  "delivery": {
-    "mode": "announce",
-    "channel": "feishu" // ❌ This breaks auto-inference!
-  }
-}
-```
+## Forbidden
 
-**WHY THIS WORKS:**
-
-OpenClaw's cron tool (`inferDeliveryFromSessionKey()`) automatically:
-
-1. Parses your current session key (e.g., `agent:main:feishu:direct:ou_abc123xyz`)
-2. Extracts the channel (`feishu`) and peer ID (`ou_abc123xyz`)
-3. Constructs the correct delivery config:
-   ```json
-   {
-     "mode": "announce",
-     "channel": "feishu",
-     "to": "ou_abc123xyz"
-   }
-   ```
-
-**WHEN AUTO-INFERENCE HAPPENS:**
-
-The tool will auto-infer delivery ONLY if:
-
-- `delivery` is null/undefined, OR
-- `delivery.channel` and `delivery.to` are both empty/missing
-- `delivery.mode` is empty or "announce"
-
-If you set `delivery.channel`, the tool thinks you're manually configuring it and skips inference, but then `delivery.to` is missing and delivery fails!
-
-**DO NOT use:**
-
-- ❌ `exec` tool with `openclaw cron` commands
-- ❌ Any CLI approach (`openclaw cron add ...`)
-- ❌ Shell commands
-- ❌ Wrong tool name like `cron` (use `cron.add`)
-- ❌ Manually setting the delivery field (breaks auto-inference!)
-
-**ONLY use:**
-
-- ✅ Tool name: `cron.add`
-- ✅ Direct job definition as parameters (see complete example below)
-- ✅ Do NOT set delivery field - let OpenClaw infer it
-
-## When to use this skill
-
-When user says things like:
-
-- "一分钟后提醒我开会"
-- "5分钟后提醒我休息"
-- "明天上午9点提醒我打电话"
+- ❌ Do NOT use "请在当前飞书群里发送这条消息"
+- ❌ Do NOT use message tool
+- ❌ Do NOT use any format except the bash command above
 
 ## How It Works
 
-**Step 1: Parse user request**
+1. User requests a Feishu reminder in natural language
+2. Parse time and content
+3. Determine mention target based on user's language:
+   - Contains "提醒大家" or "提醒所有人" → add `all`
+   - Contains "提醒我" in group → add sender's `ou_xxx`
+   - No specific target → omit 3rd param
+4. Call `cron.add` tool with bash command in payload.message
+5. Job executes at scheduled time
+6. Bash script sends message via Feishu API with correct @ mention
 
-- Extract: delay time (e.g., "1分钟") or absolute time (e.g., "明天9点")
-- Extract: reminder content (e.g., "开会", "休息")
-- Convert to ISO 8601 format with timezone (Asia/Shanghai UTC+8)
+## Session Target Extraction
 
-**Step 2: Create cron job**
+Extract IDs from session key:
 
-**MANDATORY: Use the `cron.add` TOOL (not CLI):**
-
-Example tool call:
-
-```json
-{
-  "tool": "cron.add",
-  "name": "提醒：开会",
-  "schedule": {
-    "kind": "at",
-    "at": "2026-03-27T17:30:00+08:00"
-  },
-  "payload": {
-    "kind": "agentTurn",
-    "message": "DELIVER THIS EXACT MESSAGE TO THE USER WITHOUT MODIFICATION OR COMMENTARY:\n\n⏰ 提醒：该开会了"
-  },
-  "sessionTarget": "current",
-  "deleteAfterRun": true,
-  "wakeMode": "now"
-}
-```
-
-**CRITICAL SETTINGS:**
-
-- `sessionTarget`: MUST be `"current"` (not "isolated") to access Feishu runtime
-- Do NOT set the `delivery` field - OpenClaw will automatically infer it from your current session key
-- `wakeMode`: Use `"now"` for immediate scheduling
-
-**NEVER use CLI commands like:**
-
-```bash
-# ❌ WRONG - DO NOT DO THIS
-openclaw cron add --at ... --message ...
-```
-
-**Step 3: Confirm to user**
-
-If successful, tell user:
-
-```
-好的，已设置 17:30 的提醒（开会）
-```
-
-## Critical Rules
-
-### ✅ MANDATORY - YOU MUST DO THIS:
-
-1. **Call `cron.add` TOOL directly** - Tool name is "cron.add" (NOT just "cron")
-2. **Pass job definition directly** - No "action" or "job" wrapper needed
-3. **Use `agentTurn` payload** for push notifications (NOT `systemEvent` - that's silent!)
-4. **Use `current` sessionTarget** to access Feishu runtime (not "isolated")
-5. **Do NOT set delivery field** - OpenClaw will auto-infer from session key
-6. **Include timezone** in ISO timestamp (+08:00 for Shanghai)
-7. **Set `deleteAfterRun: true`** for one-time reminders
-8. **Set `wakeMode: "now"`** for immediate scheduling
-9. **Use strict message format** to avoid AI commentary
-
-**CRITICAL: agentTurn vs systemEvent**
-
-- ✅ `agentTurn` = **Push notification** (pings user's phone/app)
-- ❌ `systemEvent` = **Silent log** (only in chat history, NO notification)
-
-### ❌ ABSOLUTELY FORBIDDEN - NEVER DO THIS:
-
-1. ❌ **NEVER use `exec` tool** with `openclaw cron` CLI commands
-2. ❌ **NEVER use shell commands** like `bash -c 'openclaw cron ...'`
-3. ❌ **NEVER use `openclaw cron add`** in any form
-4. ❌ Don't use `sessions_spawn` for delays
-5. ❌ Don't use `sleep` commands
-6. ❌ Don't use `message` tool (Feishu doesn't support it)
-7. ❌ Don't use `systemEvent` (it won't send push notifications)
-8. ❌ Don't promise reminders without successful cron creation
-
-**If you find yourself typing "openclaw cron" or "exec", STOP IMMEDIATELY and use the `cron` TOOL instead.**
-
-## Time Calculation Examples
-
-**Relative time (from current time):**
-
-```
-User: "一分钟后提醒我"
-Current: 2026-03-27 09:00:00 UTC (17:00:00 +08:00)
-Target:  2026-03-27 09:01:00 UTC (17:01:00 +08:00)
-ISO:     "2026-03-27T17:01:00+08:00"
-```
-
-**Absolute time (today):**
-
-```
-User: "下午3点提醒我"
-Current: 2026-03-27 09:00:00 UTC (17:00:00 +08:00)
-Target:  2026-03-27 07:00:00 UTC (15:00:00 +08:00)
-ISO:     "2026-03-27T15:00:00+08:00"
-```
-
-**Tomorrow:**
-
-```
-User: "明天上午9点提醒我"
-Current: 2026-03-27 09:00:00 UTC
-Target:  2026-03-28 01:00:00 UTC (09:00:00 +08:00)
-ISO:     "2026-03-28T09:00:00+08:00"
-```
-
-## Message Format
-
-**CRITICAL:** Use this exact format for the message to avoid AI commentary:
-
-```
-DELIVER THIS EXACT MESSAGE TO THE USER WITHOUT MODIFICATION OR COMMENTARY:
-
-⏰ 提醒：{用户指定的内容}
-```
-
-This ensures the reminder is clean and direct.
-
-## Error Handling
-
-**If cron tool fails:**
-
-1. Tell user honestly: "抱歉，定时提醒功能目前不可用"
-2. Explain reason if available (e.g., "cron工具连接超时")
-3. Offer alternative: "我现在可以立即用 feishu_chat 发送消息，但无法延时发送"
-
-**Never:**
-
-- Don't claim reminder is set if cron failed
-- Don't use workarounds that don't actually work
-- Don't silently fail
-
-## Complete Example
-
-**User:** "一分钟后提醒我开会"
-
-**Agent actions:**
-
-1. Calculate time: Current + 1 minute → ISO format
-2. **Call cron.add TOOL (NOT CLI!):**
-
-```json
-{
-  "tool": "cron.add",
-  "name": "提醒：开会",
-  "schedule": {
-    "kind": "at",
-    "at": "2026-03-27T17:01:00+08:00"
-  },
-  "payload": {
-    "kind": "agentTurn",
-    "message": "DELIVER THIS EXACT MESSAGE TO THE USER WITHOUT MODIFICATION OR COMMENTARY:\n\n⏰ 提醒：该开会了"
-  },
-  "sessionTarget": "current",
-  "deleteAfterRun": true,
-  "wakeMode": "now"
-}
-```
-
-**Note:** Do NOT set the `delivery` field - OpenClaw will automatically infer it from your current session key.
-
-3. If success, reply: "好的，已设置 17:01 的提醒（开会）"
-4. At 17:01, user receives Feishu push notification: "⏰ 提醒：该开会了"
-
-## ⚠️ Final Reminder
-
-**THIS IS A `cron.add` TOOL SKILL, NOT A CLI SKILL.**
-
-**Tool name must be: `cron.add` (NOT `cron`)**
-
-If you see yourself about to type:
-
-- `exec`
-- `openclaw cron`
-- `bash -c`
-- `"tool": "cron"` (wrong! use `"tool": "cron.add"`)
-
-**STOP! You are doing it wrong. Use the `cron.add` TOOL instead.**
-
-## Reference
-
-- Timezone: Asia/Shanghai (UTC+8)
-- Cron docs: https://docs.openclaw.ai/automation/cron-jobs
-- Use `cron-mastery` skill for advanced scheduling patterns
+- Private: `agent:main:feishu:direct:ou_xxx` → use `ou_xxx`
+- Group: `agent:main:feishu:group:oc_xxx` → use `oc_xxx`
+- Sender's ou\_ can be obtained from message context
