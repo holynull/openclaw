@@ -329,7 +329,7 @@
         "config": {
           "sourceFlag": "catwallet_openclaw",
           "sourceType": "catwallet_openclaw",
-          "equipmentNo": ""
+          "equipmentNo": "openclaw-device-default"
         }
       }
     }

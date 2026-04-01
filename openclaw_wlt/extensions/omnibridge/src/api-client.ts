@@ -91,7 +91,18 @@ export class OmnibridgeClient {
   constructor(config?: { sourceFlag?: string; sourceType?: string; equipmentNo?: string }) {
     this.sourceFlag = config?.sourceFlag || "catwallet_openclaw";
     this.sourceType = config?.sourceType || "catwallet_openclaw";
-    this.equipmentNo = config?.equipmentNo || "";
+    // Generate a default equipmentNo if not provided (required by API)
+    this.equipmentNo = config?.equipmentNo || this.generateEquipmentNo();
+  }
+
+  /**
+   * Generate a unique equipment identifier
+   * Format similar to API documentation example: "zfgryh918f93a19fdg6918a68cf5"
+   */
+  private generateEquipmentNo(): string {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 15);
+    return `openclaw-${timestamp}${random}`.substring(0, 32);
   }
 
   /**
@@ -175,16 +186,12 @@ export class OmnibridgeClient {
   }): Promise<OrderData> {
     const requestParams: any = {
       ...params,
+      equipmentNo: this.equipmentNo,
       sourceType: this.sourceType,
       sourceFlag: this.sourceFlag,
       slippage: params.slippage || "0.02",
       fixedRate: params.fixedRate || "N",
     };
-
-    // Only include equipmentNo if it has a value
-    if (this.equipmentNo) {
-      requestParams.equipmentNo = this.equipmentNo;
-    }
 
     console.log("[Omnibridge] CreateOrder API Request:", JSON.stringify(requestParams, null, 2));
 
@@ -239,14 +246,10 @@ export class OmnibridgeClient {
   async queryOrderStatus(params: { orderId: string }): Promise<OrderStatus> {
     const requestParams: any = {
       ...params,
+      equipmentNo: this.equipmentNo,
       sourceType: this.sourceType,
       sourceFlag: this.sourceFlag,
     };
-
-    // Only include equipmentNo if it has a value
-    if (this.equipmentNo) {
-      requestParams.equipmentNo = this.equipmentNo;
-    }
 
     const response = await axios.post<OmnibridgeResponse<OrderStatus>>(
       `${OMNIBRIDGE_BASE_URL}/api/v2/queryOrderState`,
