@@ -182,6 +182,8 @@ export class OmnibridgeClient {
       fixedRate: params.fixedRate || "N",
     };
 
+    console.log("[Omnibridge] CreateOrder API Request:", JSON.stringify(requestParams, null, 2));
+
     const response = await axios.post<OmnibridgeResponse<OrderData>>(
       `${OMNIBRIDGE_BASE_URL}/api/v2/accountExchange`,
       requestParams,
