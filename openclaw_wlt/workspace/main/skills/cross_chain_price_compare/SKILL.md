@@ -8,6 +8,24 @@ metadata: { "openclaw": { "emoji": "⚖️", "requires": { "env": [] } } }
 
 Compare cross-chain token swap quotes from multiple platforms to help users find the most cost-effective exchange option.
 
+## ⚡ Real-Time Quotes - No Caching!
+
+**CRITICAL: Always query fresh, real-time quotes for every request.**
+
+- ✅ Each user request triggers new API calls to all platforms
+- ✅ Quotes are refreshed before executing any swap
+- ✅ Rate changes are detected and users are alerted
+- ❌ Never cache or reuse old quote data
+- ❌ Never assume rates remain stable
+
+**Why this matters:**
+Cross-chain exchange rates fluctuate based on liquidity, network congestion, and market conditions. Using stale quotes can result in:
+
+- Unexpected slippage
+- Failed transactions
+- User receiving less than expected
+- Poor user experience
+
 ## 🎯 Purpose
 
 This skill helps users make informed decisions by comparing quotes from all available swap platforms:
@@ -214,11 +232,13 @@ const difference = best.output - comparison[1].output;
 
 **Always show:**
 
-1. **Comparison table** with all platforms
-2. **Best option** clearly marked
-3. **Savings amount** (difference from best to worst)
-4. **Important notes** about each platform
-5. **Ask user to confirm** which platform to use
+1. **Query timestamp** - When these quotes were fetched
+2. **Comparison table** with all platforms
+3. **Best option** clearly marked
+4. **Savings amount** (difference from best to worst)
+5. **Important notes** about each platform
+6. **Validity warning** - Quotes may change before execution
+7. **Ask user to confirm** which platform to use
 
 **Example Output:**
 
@@ -226,6 +246,7 @@ const difference = best.output - comparison[1].output;
 📊 Cross-Chain Swap Quote Comparison
 
 Swapping: 100 USDT (BSC) → USDT (ETH)
+⏰ Quotes fetched at: 2026-04-01 12:30:45 UTC (just now)
 
 ┌─────────────┬──────────────┬──────────┬─────────────┬───────────┬──────────┐
 │ Platform    │ You Receive  │ Fee Rate │ Network Fee │ Total Fee │ Net Rate │
@@ -236,6 +257,8 @@ Swapping: 100 USDT (BSC) → USDT (ETH)
 
 💰 Best Option: Bridgers DEX
    You save: 0.3 USDT more compared to Omnibridge
+
+⚠️ Note: Exchange rates change constantly. Quotes will be refreshed before execution.
 
 📝 Platform Details:
 
@@ -303,6 +326,68 @@ Suggestion: Increase amount to at least 10 USDT
 
 ## 🎯 Best Practices
 
+### 0. Real-Time Query on Every Request 🔄
+
+**MANDATORY: Every time user mentions swap/exchange/compare, query fresh quotes.**
+
+```javascript
+// User says: "我想兑换 100 USDT 从 BSC 到 ETH"
+// → IMMEDIATELY query both platforms
+
+// User says: "帮我对比一下报价"
+// → Query fresh quotes (even if just queried 1 minute ago)
+
+// User says: "现在行情怎么样？"
+// → Query fresh quotes and show latest rates
+
+// User says: "用 Bridgers 兑换"
+// → REFRESH quotes one more time before executing
+
+// ✅ ALWAYS: Query on every request
+const quotes = await compareAllPlatforms(params);
+
+// ❌ NEVER: Reuse old data
+const cachedQuotes = lastQuotes; // DON'T DO THIS!
+```
+
+**Quote Validity:**
+
+- Consider quotes "stale" after 30 seconds
+- Always show timestamp with quotes
+- If >30 seconds old, auto-refresh before showing
+
+```javascript
+function shouldRefreshQuotes(lastQueryTime) {
+  const now = Date.now();
+  const age = (now - lastQueryTime) / 1000; // seconds
+  return age > 30; // Refresh if older than 30s
+}
+
+// Example usage
+let lastQuotes = null;
+let lastQueryTime = 0;
+
+async function getQuotes(params) {
+  if (!lastQuotes || shouldRefreshQuotes(lastQueryTime)) {
+    console.log("📡 Fetching fresh quotes from all platforms...");
+    lastQuotes = await compareAllPlatforms(params);
+    lastQueryTime = Date.now();
+  } else {
+    console.log(
+      "⚠️ Using recent quotes from",
+      Math.floor((Date.now() - lastQueryTime) / 1000),
+      "seconds ago",
+    );
+  }
+
+  return {
+    ...lastQuotes,
+    timestamp: new Date(lastQueryTime).toISOString(),
+    age: Math.floor((Date.now() - lastQueryTime) / 1000),
+  };
+}
+```
+
 ### 1. Always Compare Before Swapping
 
 ```javascript
@@ -339,24 +424,87 @@ const omnibridgeAmount = "100";
 // Always check token decimals from token list
 ```
 
-### 4. Refresh Quotes Before Execution
+### 4. Refresh Quotes Before Execution ⚠️ CRITICAL
 
-Quotes can expire! If user takes time to decide:
+**ALWAYS query fresh quotes - NEVER use cached data!**
+
+Cross-chain exchange rates change constantly. Follow this workflow:
 
 ```javascript
-// Get initial quotes
-const quotes1 = await compareAllPlatforms(...);
-showToUser(quotes1);
+// ✅ CORRECT: Query fresh quotes every time
+async function handleSwapRequest(params) {
+  // Step 1: Get fresh quotes (no caching!)
+  const quotes = await compareAllPlatforms(params);
+  showToUser(quotes);
 
-// User thinks for 5 minutes...
+  // Step 2: User chooses platform and confirms
+  const userChoice = await askUser("Which platform do you want to use?");
 
-// Refresh before executing
-const quotes2 = await compareAllPlatforms(...);
-if (hasSignificantChange(quotes1, quotes2)) {
-  showToUser("⚠️ Rates have changed! New comparison:");
-  showToUser(quotes2);
+  // Step 3: REFRESH quotes before executing (critical!)
+  const freshQuotes = await compareAllPlatforms(params);
+
+  // Step 4: Check if rates changed significantly
+  const rateChange = Math.abs(freshQuotes[0].output - quotes[0].output) / quotes[0].output;
+
+  if (rateChange > 0.01) {  // >1% change
+    showToUser("⚠️ Rates have changed! Updated comparison:");
+    showToUser(freshQuotes);
+    const reconfirm = await askUser("Rates changed. Still want to proceed?");
+    if (!reconfirm) return;
+  }
+
+  // Step 5: Execute with fresh data
+  await executeSwap(userChoice, freshQuotes);
+}
+
+// ❌ WRONG: Using stale data
+const quotes = await compareAllPlatforms(...);
+// ... 5 minutes later ...
+await executeSwap(quotes);  // Rates might have changed!
+```
+
+**When to Refresh:**
+
+1. **Every user request**: Each time user asks for swap quotes
+2. **Before execution**: Always re-query right before swapping
+3. **After errors**: If swap fails, refresh and try again
+4. **On user request**: If user says "check again" or "refresh"
+
+**Rate Change Alerts:**
+
+```javascript
+// Define significant change threshold
+const SIGNIFICANT_CHANGE = 0.01; // 1%
+
+function checkRateChange(oldQuotes, newQuotes) {
+  const oldBest = oldQuotes[0].output;
+  const newBest = newQuotes[0].output;
+  const changePercent = Math.abs(newBest - oldBest) / oldBest;
+
+  if (changePercent > SIGNIFICANT_CHANGE) {
+    const direction = newBest > oldBest ? "↑ improved" : "↓ worsened";
+    const diff = Math.abs(newBest - oldBest).toFixed(4);
+
+    return {
+      changed: true,
+      direction,
+      diff,
+      message: `⚠️ Rate ${direction} by ${diff} tokens (${(changePercent * 100).toFixed(2)}%)`,
+    };
+  }
+
+  return { changed: false };
 }
 ```
+
+**No Caching Policy:**
+
+- ❌ Do NOT cache quote results
+- ❌ Do NOT reuse quotes from previous requests
+- ❌ Do NOT assume rates are stable
+- ✅ Always query fresh data from APIs
+- ✅ Show timestamps on all quotes
+- ✅ Warn users if refreshing takes time
 
 ### 5. Save Comparison for User Reference
 
@@ -374,6 +522,8 @@ const report = formatComparisonReport(comparison);
 Before presenting comparison to user:
 
 - [ ] Got quotes from ALL available platforms (or handled errors)
+- [ ] Quotes are FRESH (just queried, not cached)
+- [ ] Included timestamp showing when quotes were fetched
 - [ ] Converted all amounts to same format (human-readable)
 - [ ] Calculated total fees (platform fee + network fee)
 - [ ] Sorted platforms by best output amount
@@ -381,7 +531,143 @@ Before presenting comparison to user:
 - [ ] Formatted comparison table clearly
 - [ ] Highlighted best option with ✅
 - [ ] Included platform details (security, speed, limits)
+- [ ] Added validity warning (rates may change)
 - [ ] Asked user to confirm which platform to use
+
+Before executing swap:
+
+- [ ] REFRESH quotes one final time
+- [ ] Check if rates changed significantly (>1%)
+- [ ] Alert user if rates changed
+- [ ] Get user confirmation with updated rates
+- [ ] Execute swap with fresh data
+
+## 📡 Real-Time Query Strategy
+
+### Query Triggers
+
+Always query fresh quotes when:
+
+1. ✅ User asks to compare rates
+2. ✅ User mentions swap/exchange/convert
+3. ✅ User asks "what's the rate" or "how much"
+4. ✅ User chooses platform and confirms swap
+5. ✅ Previous quotes are >30 seconds old
+6. ✅ User says "refresh" or "check again"
+
+### Query Flow
+
+```mermaid
+graph TD
+    A[User Request] --> B{Has Recent Quotes?}
+    B -->|No| C[Query All Platforms]
+    B -->|>30s old| C
+    B -->|<30s old| D{User Action?}
+    D -->|Just asking| E[Show Recent + Warning]
+    D -->|Want to swap| C
+    C --> F[Show Comparison]
+    F --> G{User Confirms?}
+    G -->|Yes| H[REFRESH Quotes]
+    H --> I{Rate Changed >1%?}
+    I -->|Yes| J[Alert User + Reconfirm]
+    I -->|No| K[Execute Swap]
+    J -->|User OK| K
+    J -->|User Cancel| L[End]
+    G -->|No| L
+```
+
+### Implementation Example
+
+```typescript
+class QuoteManager {
+  private lastQuotes: any = null;
+  private lastQueryTime: number = 0;
+  private STALE_THRESHOLD_MS = 30 * 1000; // 30 seconds
+
+  async getQuotes(params: SwapParams, forceRefresh = false): Promise<QuoteComparison> {
+    const now = Date.now();
+    const age = now - this.lastQueryTime;
+
+    if (forceRefresh || !this.lastQuotes || age > this.STALE_THRESHOLD_MS) {
+      console.log(
+        `📡 Fetching fresh quotes (${forceRefresh ? "forced" : age > this.STALE_THRESHOLD_MS ? "stale" : "first query"})`,
+      );
+
+      this.lastQuotes = await this.queryAllPlatforms(params);
+      this.lastQueryTime = now;
+    } else {
+      console.log(`⏱️  Using recent quotes from ${Math.floor(age / 1000)}s ago`);
+    }
+
+    return {
+      ...this.lastQuotes,
+      queriedAt: new Date(this.lastQueryTime).toISOString(),
+      ageSeconds: Math.floor(age / 1000),
+      isStale: age > this.STALE_THRESHOLD_MS,
+    };
+  }
+
+  private async queryAllPlatforms(params: SwapParams): Promise<any> {
+    const [bridgersQuote, omnibridgeQuote] = await Promise.allSettled([
+      this.queryBridgers(params),
+      this.queryOmnibridge(params),
+    ]);
+
+    return this.normalizeAndCompare(bridgersQuote, omnibridgeQuote);
+  }
+
+  async refreshBeforeSwap(params: SwapParams): Promise<QuoteComparison> {
+    console.log("🔄 Refreshing quotes before swap execution...");
+    return this.getQuotes(params, true); // Force refresh
+  }
+
+  checkSignificantChange(
+    oldQuotes: QuoteComparison,
+    newQuotes: QuoteComparison,
+  ): {
+    changed: boolean;
+    message?: string;
+  } {
+    const THRESHOLD = 0.01; // 1%
+    const oldBest = oldQuotes.platforms[0].output;
+    const newBest = newQuotes.platforms[0].output;
+    const changeRatio = Math.abs(newBest - oldBest) / oldBest;
+
+    if (changeRatio > THRESHOLD) {
+      const direction = newBest > oldBest ? "improved ↑" : "worsened ↓";
+      const diff = Math.abs(newBest - oldBest).toFixed(4);
+      const percent = (changeRatio * 100).toFixed(2);
+
+      return {
+        changed: true,
+        message: `⚠️ Exchange rate ${direction} by ${diff} tokens (${percent}%)`,
+      };
+    }
+
+    return { changed: false };
+  }
+}
+
+// Usage in skill
+const quoteManager = new QuoteManager();
+
+// When user asks for comparison
+const quotes = await quoteManager.getQuotes(params);
+showToUser(quotes);
+
+// When user confirms swap
+const userChoice = await askUser("Which platform?");
+const freshQuotes = await quoteManager.refreshBeforeSwap(params);
+const change = quoteManager.checkSignificantChange(quotes, freshQuotes);
+
+if (change.changed) {
+  showToUser(change.message);
+  const ok = await askUser("Rate changed. Still proceed?");
+  if (!ok) return;
+}
+
+await executeSwap(userChoice, freshQuotes);
+```
 
 ## 🎓 Example: Complete Comparison Flow
 
