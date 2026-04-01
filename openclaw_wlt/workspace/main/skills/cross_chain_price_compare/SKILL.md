@@ -55,7 +55,333 @@ Omnibridge   | 99.2 USDT     | 0.5%     | 0.3 USDT    | 0.8 USDT  | 0.992
 ✅ BEST      | Bridgers      | +0.3 USDT more
 ```
 
-## 📋 Comparison Workflow
+## � 全市场行情查询（All Market Quotes）
+
+**Two modes of operation:**
+
+### Mode 1: Single Pair Comparison (单个兑换对对比)
+
+User specifies exact swap parameters, you compare platforms for that specific pair.
+
+Example: "对比 100 USDT 从 BSC 到 ETH 的报价"
+
+### Mode 2: Supported Pairs Overview (支持的兑换对总览) ⭐ NEW
+
+User asks for current supported swap pairs without specifying exact parameters.
+
+Example queries that trigger Mode 2:
+
+- "查一下支持的兑换行情"
+- "有哪些兑换对可用？"
+- "现在能兑换哪些币？"
+- "给我看看当前的跨链报价"
+
+### 🔍 Mode 2: Workflow
+
+#### Step 1: Query Platform Support Lists
+
+```javascript
+// Get Bridgers supported tokens
+const bridgersTokens = await bridgers_get_tokens();
+console.log(`Bridgers supports ${bridgersTokens.length} tokens`);
+
+// Get Omnibridge supported coins for common chains
+const omnibridgeCoins = {};
+const chains = ["BSC", "ETH", "Polygon", "Arbitrum"];
+for (const chain of chains) {
+  try {
+    omnibridgeCoins[chain] = await omnibridge_get_coins({ mainNetwork: chain });
+  } catch (e) {
+    // Chain not supported, skip
+  }
+}
+```
+
+#### Step 2: Build Supported Pairs List
+
+Use platform data to identify valid pairs (no guessing):
+
+```javascript
+const supportedPairs = [];
+
+// From Bridgers: Find cross-chain pairs for popular tokens
+const popularTokens = ["USDT", "USDC", "ETH", "WETH", "BNB", "DAI"];
+const fromChain = "BSC"; // Start with BSC as source
+
+for (const token of popularTokens) {
+  const fromToken = bridgersTokens.find((t) => t.symbol === token && t.chain === fromChain);
+
+  if (fromToken) {
+    // Find destination chains for this token
+    const toChains = bridgersTokens
+      .filter((t) => t.symbol === token && t.chain !== fromChain)
+      .map((t) => t.chain);
+
+    for (const toChain of toChains) {
+      const toToken = bridgersTokens.find((t) => t.symbol === token && t.chain === toChain);
+
+      supportedPairs.push({
+        token,
+        from: fromChain,
+        to: toChain,
+        bridgers: {
+          fromAddress: fromToken.address,
+          toAddress: toToken.address,
+          decimals: fromToken.decimals,
+        },
+      });
+    }
+  }
+}
+
+// Add Omnibridge support flags
+for (const pair of supportedPairs) {
+  const fromCoin = omnibridgeCoins[pair.from]?.find(
+    (c) => c.coinCode === pair.token && c.mainNetwork === pair.from,
+  );
+  const toCoin = omnibridgeCoins[pair.to]?.find(
+    (c) => c.coinCode === pair.token && c.mainNetwork === pair.to,
+  );
+
+  if (fromCoin && toCoin) {
+    pair.omnibridge = {
+      depositCode: `${pair.token}(${pair.from})`,
+      receiveCode: `${pair.token}(${pair.to})`,
+    };
+  }
+}
+```
+
+#### Step 3: Query Sample Quotes (100 tokens)
+
+```javascript
+const userAddress = await eth_get_address({ accountIndex: 0 });
+const quotes = [];
+
+for (const pair of supportedPairs) {
+  const result = {
+    pair: `${pair.token}: ${pair.from} → ${pair.to}`,
+    bridgers: null,
+    omnibridge: null,
+  };
+
+  // Query Bridgers
+  if (pair.bridgers) {
+    try {
+      const amount = (100 * Math.pow(10, pair.bridgers.decimals)).toString();
+      const quote = await bridgers_get_quote({
+        fromTokenAddress: pair.bridgers.fromAddress,
+        toTokenAddress: pair.bridgers.toAddress,
+        fromTokenAmount: amount,
+        fromTokenChain: pair.from,
+        toTokenChain: pair.to,
+        userAddress: userAddress.address,
+      });
+
+      result.bridgers = {
+        output: parseFloat(quote.expectedOutput) / Math.pow(10, pair.bridgers.decimals),
+        fee: quote.platformFee,
+        min: parseFloat(quote.depositMin) / Math.pow(10, pair.bridgers.decimals),
+      };
+    } catch (e) {
+      result.bridgers = { error: e.message };
+    }
+  }
+
+  // Query Omnibridge
+  if (pair.omnibridge) {
+    try {
+      const quote = await omnibridge_get_quote({
+        depositCoinCode: pair.omnibridge.depositCode,
+        receiveCoinCode: pair.omnibridge.receiveCode,
+        depositCoinAmt: "100",
+      });
+
+      result.omnibridge = {
+        output: parseFloat(quote.receiveCoinAmt),
+        fee: `${(parseFloat(quote.serviceFeeRate) * 100).toFixed(2)}%`,
+        min: parseFloat(quote.minLimit),
+      };
+    } catch (e) {
+      result.omnibridge = { error: e.message };
+    }
+  }
+
+  quotes.push(result);
+}
+```
+
+#### Step 4: Display Supported Pairs Overview
+
+```
+📊 当前支持的跨链兑换行情
+⏰ 查询时间: 2026-04-01 12:30:45 UTC
+💰 基准金额: 100 tokens
+
+┌──────────────────────┬─────────────┬─────────┬──────┬─────────────┬─────────┬──────┐
+│ 兑换对               │ Bridgers    │ 费率    │ 限额 │ Omnibridge  │ 费率    │ 限额 │
+├──────────────────────┼─────────────┼─────────┼──────┼─────────────┼─────────┼──────┤
+│ USDT: BSC → ETH      │ 99.5 USDT   │ 0.30%   │ 10   │ 99.2 USDT   │ 0.50%   │ 10   │
+│ USDT: BSC → Polygon  │ 99.6 USDT   │ 0.25%   │ 10   │ ❌ 不支持   │ -       │ -    │
+│ USDT: BSC → Arbitrum │ 99.4 USDT   │ 0.35%   │ 10   │ 99.3 USDT   │ 0.45%   │ 10   │
+│ USDC: BSC → ETH      │ 99.3 USDC   │ 0.40%   │ 10   │ ❌ 不支持   │ -       │ -    │
+│ ETH: BSC → Polygon   │ 0.985 ETH   │ 0.50%   │ 0.1  │ 0.982 ETH   │ 0.60%   │ 0.1  │
+└──────────────────────┴─────────────┴─────────┴──────┴─────────────┴─────────┴──────┘
+
+💡 最佳选择：
+• USDT BSC→ETH: Bridgers (多 0.3 USDT)
+• USDT BSC→Polygon: Bridgers (唯一支持)
+• USDT BSC→Arbitrum: Bridgers (多 0.1 USDT)
+
+⚠️ 注意: 实际到账金额会随兑换数量变化，表中为 100 tokens 的报价
+```
+
+### 🎯 When to Use Mode 1 vs Mode 2
+
+**Use Mode 1** when user gives specific parameters:
+
+- "兑换 100 USDT 从 BSC 到 ETH"
+- "对比 50 USDC BSC 到 Polygon 的报价"
+
+**Use Mode 2** when user asks generally:
+
+- "查一下支持的兑换"
+- "有哪些兑换对？"
+- "现在能兑换什么？"
+
+**Quick detection:**
+
+```javascript
+const hasAmount = /\d+\s*(USDT|USDC|ETH)/.test(userQuery);
+const hasRoute = /(从|to|→).*(BSC|ETH|Polygon)/.test(userQuery);
+
+if (hasAmount && hasRoute) {
+  return "mode1"; // Specific comparison
+} else {
+  return "mode2"; // General overview
+}
+```
+
+│ │ 💰 BEST │ Bridgers (+0.003)│ │ │
+└─────────────────────────┴─────────────┴────────────────┴──────────┴──────────┘
+
+📈 市场总结:
+• 共发现 15 个可用兑换对
+• Bridgers 支持: 12 个
+• Omnibridge 支持: 8 个
+• 两者都支持: 5 个
+
+💡 建议:
+• USDT BSC→ETH: 推荐使用 Bridgers (更低费率)
+• USDT BSC→Polygon: 仅 Bridgers 支持
+• ETH 跨链: Bridgers 普遍优于 Omnibridge
+
+⚠️ 注意: 以上报价基于 100 tokens，实际到账金额会随兑换数量变化
+
+````
+
+#### Step 5: Filter and Sort Options
+
+Allow user to filter by:
+
+```javascript
+// Filter by specific token
+const usdtPairs = marketQuotes.filter((q) => q.token === "USDT");
+
+// Filter by specific chain
+const fromBSC = marketQuotes.filter((q) => q.route.startsWith("BSC"));
+
+// Sort by best rate
+marketQuotes.sort((a, b) => {
+  const aRate = Math.max(
+    a.platforms.bridgers?.output || 0,
+    a.platforms.omnibridge?.output || 0,
+  );
+  const bRate = Math.max(
+    b.platforms.bridgers?.output || 0,
+    b.platforms.omnibridge?.output || 0,
+  );
+  return bRate - aRate;
+});
+
+// Show only pairs where both platforms compete
+const competitive = marketQuotes.filter(
+  (q) => q.platforms.bridgers?.available && q.platforms.omnibridge?.available,
+);
+````
+
+#### Step 6: Handle Errors Gracefully
+
+Some pairs might fail to quote (unsupported, liquidity issues, etc.):
+
+```javascript
+// Mark unavailable pairs clearly
+for (const quote of marketQuotes) {
+  if (!quote.platforms.bridgers?.available && !quote.platforms.omnibridge?.available) {
+    quote.status = "❌ 暂不支持";
+  } else if (quote.platforms.bridgers?.available && !quote.platforms.omnibridge?.available) {
+    quote.status = "⚠️ 仅 Bridgers";
+  } else if (!quote.platforms.bridgers?.available && quote.platforms.omnibridge?.available) {
+    quote.status = "⚠️ 仅 Omnibridge";
+  } else {
+    quote.status = "✅ 多平台";
+  }
+}
+```
+
+### 🎯 When to Use Mode 1 vs Mode 2
+
+**Use Mode 1 (Single Pair)** when:
+
+- User specifies exact tokens and chains
+- User asks "100 USDT from BSC to ETH"
+- User wants to execute a specific swap
+
+**Use Mode 2 (Full Market)** when:
+
+- User asks "所有支持的兑换"
+- User wants market overview
+- User asks "有哪些选择？"
+- User needs to discover available options
+
+**Smart detection:**
+
+```javascript
+function detectMode(userQuery) {
+  // Keywords for Mode 2 (full market)
+  const mode2Keywords = [
+    "所有",
+    "全部",
+    "市场",
+    "有哪些",
+    "支持",
+    "可用",
+    "行情总览",
+    "overview",
+    "all pairs",
+  ];
+
+  // Check if user specified exact amount and pair
+  const hasExactAmount = /\d+\s*(USDT|USDC|ETH|BTC)/i.test(userQuery);
+  const hasExactChain =
+    /from\s+(BSC|ETH|Polygon)/i.test(userQuery) || /从\s*(BSC|ETH|Polygon)/i.test(userQuery);
+
+  if (hasExactAmount && hasExactChain) {
+    return "mode1"; // Single pair comparison
+  }
+
+  for (const keyword of mode2Keywords) {
+    if (userQuery.includes(keyword)) {
+      return "mode2"; // Full market overview
+    }
+  }
+
+  // Default to asking user
+  return "ask";
+}
+```
+
+## �📋 Comparison Workflow
 
 ### Step 1: Understand User Request
 
