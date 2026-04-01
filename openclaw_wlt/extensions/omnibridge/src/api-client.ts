@@ -173,14 +173,18 @@ export class OmnibridgeClient {
     slippage?: string; // e.g., "0.02" for 2% (optional)
     fixedRate?: string; // "Y" or "N" (default "N")
   }): Promise<OrderData> {
-    const requestParams = {
+    const requestParams: any = {
       ...params,
-      equipmentNo: this.equipmentNo,
       sourceType: this.sourceType,
       sourceFlag: this.sourceFlag,
       slippage: params.slippage || "0.02",
       fixedRate: params.fixedRate || "N",
     };
+
+    // Only include equipmentNo if it has a value
+    if (this.equipmentNo) {
+      requestParams.equipmentNo = this.equipmentNo;
+    }
 
     console.log("[Omnibridge] CreateOrder API Request:", JSON.stringify(requestParams, null, 2));
 
@@ -233,12 +237,16 @@ export class OmnibridgeClient {
    * Query order status
    */
   async queryOrderStatus(params: { orderId: string }): Promise<OrderStatus> {
-    const requestParams = {
+    const requestParams: any = {
       ...params,
-      equipmentNo: this.equipmentNo,
       sourceType: this.sourceType,
       sourceFlag: this.sourceFlag,
     };
+
+    // Only include equipmentNo if it has a value
+    if (this.equipmentNo) {
+      requestParams.equipmentNo = this.equipmentNo;
+    }
 
     const response = await axios.post<OmnibridgeResponse<OrderStatus>>(
       `${OMNIBRIDGE_BASE_URL}/api/v2/queryOrderState`,
