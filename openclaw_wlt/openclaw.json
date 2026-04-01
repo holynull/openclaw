@@ -327,7 +327,7 @@
       "omnibridge": {
         "enabled": true,
         "config": {
-          "sourceFlag": "widget",
+          "sourceFlag": "catwallet_openclaw",
           "sourceType": "H5",
           "equipmentNo": "openclaw-device-default"
         }

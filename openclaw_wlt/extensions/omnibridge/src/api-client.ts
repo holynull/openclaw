@@ -89,7 +89,7 @@ export class OmnibridgeClient {
   private equipmentNo: string;
 
   constructor(config?: { sourceFlag?: string; sourceType?: string; equipmentNo?: string }) {
-    this.sourceFlag = config?.sourceFlag || "widget";
+    this.sourceFlag = config?.sourceFlag || "catwallet_openclaw";
     this.sourceType = config?.sourceType || "H5";
     // Generate a default equipmentNo if not provided (required by API)
     this.equipmentNo = config?.equipmentNo || this.generateEquipmentNo();
