@@ -143,8 +143,8 @@ ssh openclaw "cd ~/github.com/holynull/openclaw/openclaw_wlt/extensions/bridgers
       "bridgers-dex": {
         "enabled": true,
         "config": {
-          "sourceFlag": "widget",
-          "sourceType": "H5"
+          "sourceFlag": "catwallet_openclaw",
+          "sourceType": "catwallet_openclaw"
         }
       }
     }

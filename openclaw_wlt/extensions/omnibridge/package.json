@@ -1,0 +1,26 @@
+{
+  "name": "@openclaw/omnibridge",
+  "version": "1.0.0",
+  "description": "Omnibridge integration for cross-chain token swaps",
+  "keywords": [
+    "cross-chain",
+    "defi",
+    "omnibridge",
+    "openclaw",
+    "plugin",
+    "swap"
+  ],
+  "license": "MIT",
+  "author": "OpenClaw",
+  "type": "module",
+  "main": "./index.ts",
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.48",
+    "axios": "^1.7.2"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

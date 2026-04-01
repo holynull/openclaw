@@ -41,9 +41,7 @@
             "id": "claude-sonnet-4-6",
             "name": "Claude Sonnet 4.6 via gptsapi",
             "reasoning": false,
-            "input": [
-              "text"
-            ],
+            "input": ["text"],
             "cost": {
               "input": 0,
               "output": 0,
@@ -57,9 +55,7 @@
             "id": "gpt-4o",
             "name": "GPT 4o via gptsapi",
             "reasoning": false,
-            "input": [
-              "text"
-            ],
+            "input": ["text"],
             "cost": {
               "input": 0,
               "output": 0,
@@ -80,10 +76,7 @@
             "id": "claude-sonnet-4-6",
             "name": "Claude Sonnet 4.6 via maynor1024",
             "reasoning": false,
-            "input": [
-              "text",
-              "image"
-            ],
+            "input": ["text", "image"],
             "cost": {
               "input": 0,
               "output": 0,
@@ -97,10 +90,7 @@
             "id": "claude-sonnet-4-5-20250929",
             "name": "Claude Sonnet 4.5 via maynor1024",
             "reasoning": false,
-            "input": [
-              "text",
-              "image"
-            ],
+            "input": ["text", "image"],
             "cost": {
               "input": 0,
               "output": 0,
@@ -121,10 +111,7 @@
             "id": "gpt-4o",
             "name": "GPT 4o via maynor1024",
             "reasoning": false,
-            "input": [
-              "text",
-              "image"
-            ],
+            "input": ["text", "image"],
             "cost": {
               "input": 0,
               "output": 0,
@@ -138,10 +125,7 @@
             "id": "claude-sonnet-4-5-20250929",
             "name": "Claude Sonnet 4.5 via maynor1024-openai",
             "reasoning": false,
-            "input": [
-              "text",
-              "image"
-            ],
+            "input": ["text", "image"],
             "cost": {
               "input": 0,
               "output": 0,
@@ -162,10 +146,7 @@
             "id": "gpt-4o",
             "name": "GPT-4o",
             "reasoning": false,
-            "input": [
-              "text",
-              "image"
-            ],
+            "input": ["text", "image"],
             "cost": {
               "input": 0.0025,
               "output": 0.01,
@@ -179,10 +160,7 @@
             "id": "gpt-5.4",
             "name": "GPT-5.4",
             "reasoning": true,
-            "input": [
-              "text",
-              "image"
-            ],
+            "input": ["text", "image"],
             "cost": {
               "input": 0.005,
               "output": 0.015,
@@ -233,7 +211,12 @@
             "bridgers_get_quote",
             "bridgers_get_swap_data",
             "bridgers_create_order",
-            "bridgers_query_orders"
+            "bridgers_query_orders",
+            "omnibridge_get_coins",
+            "omnibridge_get_quote",
+            "omnibridge_create_order",
+            "omnibridge_upload_tx",
+            "omnibridge_query_order"
           ]
         }
       }
@@ -326,11 +309,7 @@
     }
   },
   "plugins": {
-    "allow": [
-      "wallet-manager",
-      "feishu",
-      "bridgers-dex"
-    ],
+    "allow": ["wallet-manager", "feishu", "bridgers-dex", "omnibridge"],
     "entries": {
       "wallet-manager": {
         "enabled": true
@@ -343,6 +322,14 @@
         "config": {
           "sourceFlag": "catwallet_openclaw",
           "sourceType": "catwallet_openclaw"
+        }
+      },
+      "omnibridge": {
+        "enabled": true,
+        "config": {
+          "sourceFlag": "catwallet_openclaw",
+          "sourceType": "catwallet_openclaw",
+          "equipmentNo": ""
         }
       }
     }

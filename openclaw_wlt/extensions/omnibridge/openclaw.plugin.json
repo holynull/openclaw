@@ -1,7 +1,7 @@
 {
-  "id": "bridgers-dex",
-  "name": "Bridgers DEX",
-  "description": "Cross-chain token swaps via Bridgers decentralized exchange (39+ chains)",
+  "id": "omnibridge",
+  "name": "Omnibridge",
+  "description": "Cross-chain token swaps via Omnibridge (supports 30+ chains including BTC, ETH, BSC, TRON, Solana)",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

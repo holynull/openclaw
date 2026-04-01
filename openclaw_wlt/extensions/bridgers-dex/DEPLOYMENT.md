@@ -89,8 +89,8 @@ OpenClaw 会从多个位置加载插件：
       "bridgers-dex": {
         "enabled": true,
         "config": {
-          "sourceFlag": "widget",
-          "sourceType": "H5",
+          "sourceFlag": "catwallet_openclaw",
+          "sourceType": "catwallet_openclaw",
           "equipmentNo": ""
         }
       }
