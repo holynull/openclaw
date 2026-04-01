@@ -77,6 +77,43 @@ Omnibridge uses specific coin code formats:
 2. If `coinCode` = "ETH" and `mainNetwork` = "ETH" → Use `"ETH"` (native token)
 3. If `coinCode` = "BNB" and `mainNetwork` = "BSC" → Use `"BNB(BSC)"` (native token on BSC)
 
+**⚠️ CRITICAL: How to Construct Coin Codes**
+
+**NEVER guess or construct coin codes manually!** Always follow this process:
+
+```javascript
+// ❌ WRONG - DO NOT DO THIS:
+const depositCoinCode = "USDT"; // Missing chain
+const depositCoinCode = "BSC"; // Wrong format
+const depositCoinCode = "usdt(bsc)"; // Wrong case
+
+// ✅ CORRECT - Follow this process:
+// Step 1: Get coin list for source chain
+const bscCoins = await omnibridge_get_coins({ mainNetwork: "BSC" });
+
+// Step 2: Find the exact coin
+const usdtOnBsc = bscCoins.find((c) => c.coinCode === "USDT" && c.mainNetwork === "BSC");
+
+// Step 3: Construct coin code: coinCode(mainNetwork)
+const depositCoinCode = `${usdtOnBsc.coinCode}(${usdtOnBsc.mainNetwork})`;
+// Result: "USDT(BSC)"
+
+// Exception: Native tokens on their own chain use coin code only
+const ethOnEth = ethCoins.find((c) => c.coinCode === "ETH");
+const depositCoinCode = "ETH"; // Not "ETH(ETH)"
+```
+
+**Common Coin Code Patterns:**
+
+| Coin  | Chain    | Correct Code       | Wrong Codes ❌                  |
+| ----- | -------- | ------------------ | ------------------------------- |
+| USDT  | BSC      | `"USDT(BSC)"`      | "USDT", "usdt(bsc)", "USDT-BSC" |
+| USDT  | Ethereum | `"USDT(ETH)"`      | "USDT", "USDT(ETHEREUM)"        |
+| USDC  | Polygon  | `"USDC(POLYGON)"`  | "USDC", "USDC(MATIC)"           |
+| ETH   | Ethereum | `"ETH"`            | "ETH(ETH)", "ETHEREUM"          |
+| BNB   | BSC      | `"BNB(BSC)"`       | "BNB", "BINANCE"                |
+| MATIC | Polygon  | `"MATIC(POLYGON)"` | "MATIC", "POLYGON"              |
+
 ### Step 2: GET QUOTE
 
 **Call `omnibridge_get_quote` to get exchange rate and fees:**
@@ -316,17 +353,78 @@ Returns:
 
 ## 🛑 Error Handling
 
+### Common API Error Codes
+
+| Error Code | Error Message        | Root Cause                 | Solution                                                           |
+| ---------- | -------------------- | -------------------------- | ------------------------------------------------------------------ |
+| `914`      | "接收货币币种不存在" | Invalid coin code format   | Use exact format from `omnibridge_get_coins`: `"TOKEN(CHAIN)"`     |
+| `915`      | "存款货币币种不存在" | Invalid deposit coin code  | Verify coin code matches API response exactly                      |
+| `916`      | "不支持该交易对"     | Trading pair not supported | Check both coins support advanced swaps (`isSupportAdvanced: "Y"`) |
+| `900`      | General error        | Various issues             | Check all parameters match API requirements                        |
+
+### Error: "接收货币币种不存在" (Code 914)
+
+**Symptom:**
+
+```
+Error: Omnibridge API error: 接收货币币种不存在
+resCode: "914"
+```
+
+**Root Cause:** Incorrect coin code format
+
+**Common Mistakes:**
+
+```javascript
+❌ omnibridge_get_quote({
+  depositCoinCode: "USDT",        // Missing chain
+  receiveCoinCode: "ETH"          // May be OK for native tokens
+})
+
+❌ omnibridge_get_quote({
+  depositCoinCode: "USDT(bsc)",   // Wrong case
+  receiveCoinCode: "USDT(eth)"
+})
+
+❌ omnibridge_get_quote({
+  depositCoinCode: "BSC-USDT",    // Wrong format
+  receiveCoinCode: "ETH-USDT"
+})
+```
+
+**Correct Solution:**
+
+```javascript
+// Step 1: Get coin list
+const bscCoins = await omnibridge_get_coins({ mainNetwork: "BSC" });
+const ethCoins = await omnibridge_get_coins({ mainNetwork: "ETH" });
+
+// Step 2: Find coins
+const usdtBsc = bscCoins.find(c => c.coinCode === "USDT");
+const usdtEth = ethCoins.find(c => c.coinCode === "USDT");
+
+// Step 3: Construct with exact format
+✅ omnibridge_get_quote({
+  depositCoinCode: "USDT(BSC)",   // TOKEN(CHAIN)
+  receiveCoinCode: "USDT(ETH)",   // TOKEN(CHAIN)
+  depositCoinAmt: "100"
+})
+```
+
 **IF quote fails:**
 
-- Check if coins are supported (use `omnibridge_get_coins`)
+- ⚠️ **FIRST**: Check coin code format matches `"TOKEN(CHAIN)"` exactly
+- Call `omnibridge_get_coins` for both chains to verify coin codes
 - Verify amount is within min/max range
 - Check if chains support cross-chain swaps
+- Ensure `isSupportAdvanced === "Y"` for both coins
 
 **IF order creation fails:**
 
 - Verify coin codes are correct (format: "TOKEN(CHAIN)")
 - Check if amounts are valid (WITHOUT decimals)
 - Ensure destination address is valid
+- Confirm coin codes match those used in successful quote
 
 **IF deposit transaction fails:**
 
@@ -586,24 +684,61 @@ Examples:
 
 ## 🚨 Common Mistakes to Avoid
 
-1. ❌ Using wrong coin code format (`"USDT"` instead of `"USDT(BSC)"`)
-2. ❌ Sending to wrong address (send to `platformAddr`, not `destinationAddr`)
-3. ❌ Using wrong amount format (with decimals in order creation)
-4. ❌ Forgetting to upload transaction hash after deposit
-5. ❌ Not checking min/max limits before creating order
-6. ❌ Using wrong chain ID when sending transaction
-7. ❌ Not verifying platform address before sending tokens
+### ⚠️ #1 MOST COMMON: Wrong Coin Code Format
+
+**This is the #1 cause of API errors!**
+
+| ❌ Wrong       | ✅ Correct    | Why                                       |
+| -------------- | ------------- | ----------------------------------------- |
+| `"USDT"`       | `"USDT(BSC)"` | Missing chain identifier                  |
+| `"usdt(bsc)"`  | `"USDT(BSC)"` | Wrong case (must be uppercase)            |
+| `"USDT-BSC"`   | `"USDT(BSC)"` | Wrong separator (use parentheses)         |
+| `"BSC"`        | `"USDT(BSC)"` | Only chain name, missing token            |
+| `"BNB"` on BSC | `"BNB(BSC)"`  | Native token needs chain for clarity      |
+| `"ETH(ETH)"`   | `"ETH"`       | Native token on own chain uses short form |
+
+**Prevention:**
+
+```javascript
+// ALWAYS get coin codes from API, NEVER construct manually
+const coins = await omnibridge_get_coins({ mainNetwork: "BSC" });
+const usdt = coins.find((c) => c.coinCode === "USDT");
+const coinCode = `${usdt.coinCode}(${usdt.mainNetwork})`; // "USDT(BSC)"
+```
+
+### Other Common Mistakes:
+
+2. ❌ **Sending to wrong address** - Send to `platformAddr` (from order), not `destinationAddr`
+3. ❌ **Using wrong amount format** - Use amounts WITHOUT decimals in order creation
+4. ❌ **Forgetting to upload transaction hash** - Call `omnibridge_upload_tx` after deposit
+5. ❌ **Not checking min/max limits** - Verify amount is within limits from quote
+6. ❌ **Using wrong chain ID** - Match chain ID to the source chain, not destination
+7. ❌ **Not verifying platform address** - Always double-check before sending tokens
 
 ## ✅ Best Practices
 
-1. ✅ Always call `omnibridge_get_quote` before creating order
-2. ✅ Present quote details and wait for user confirmation
-3. ✅ Double-check platform address from order response
-4. ✅ Verify token contract address and chain ID
-5. ✅ Upload transaction hash immediately after deposit
-6. ✅ Track order status and inform user of progress
-7. ✅ Save all transaction hashes and order IDs for user reference
-8. ✅ Handle errors gracefully and provide clear instructions
+### Coin Code Handling:
+
+1. ✅ **ALWAYS** call `omnibridge_get_coins` first to get exact coin codes
+2. ✅ **NEVER** manually construct coin codes - use values from API response
+3. ✅ **VERIFY** coin code format is `"TOKEN(CHAIN)"` before calling quote
+4. ✅ **CHECK** `isSupportAdvanced === "Y"` before attempting swap
+
+### Workflow:
+
+5. ✅ Always call `omnibridge_get_quote` before creating order
+6. ✅ Present quote details and wait for user confirmation
+7. ✅ Double-check platform address from order response
+8. ✅ Verify token contract address and chain ID match source chain
+9. ✅ Upload transaction hash immediately after deposit
+10. ✅ Track order status and inform user of progress
+11. ✅ Save all transaction hashes and order IDs for user reference
+
+### Error Handling:
+
+12. ✅ Handle API errors gracefully with clear user messages
+13. ✅ If error code 914/915, re-check coin codes and retry
+14. ✅ Provide fallback suggestions when coins not supported
 
 ## 📞 Support
 
