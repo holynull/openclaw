@@ -1,17 +1,20 @@
----
+## **⚠️ 执行模式：自动执行，无需确认！立即开始执行所有步骤。**
+
 name: web3-developer-biweekly
 description: |
-  👨‍💻 Web3开发者双周报生成与发送
+👨‍💻 Web3开发者双周报生成与发送
 
-  汇总两周内Web3开发资源，包含：
-  - 🔬 以太坊研究前沿（EIP提案、协议研究）
-  - 🛠️ 开发工具 & SDK
-  - 📚 技术教程 & 最佳实践
-  - 🏗️ 架构 & 设计模式
-  - 🌐 标准 & 协议
+汇总两周内Web3开发资源，包含：
 
-  数据源：8个RSS，优先web_fetch，不足时web_search降级
-  输出格式：飞书文档 + 摘要消息
+- 🔬 以太坊研究前沿（EIP提案、协议研究）
+- 🛠️ 开发工具 & SDK
+- 📚 技术教程 & 最佳实践
+- 🏗️ 架构 & 设计模式
+- 🌐 标准 & 协议
+
+数据源：8个RSS，优先web_fetch，不足时web_search降级
+输出格式：飞书文档 + 摘要消息
+
 ---
 
 # Web3开发者双周报生成 Skill
@@ -163,31 +166,22 @@ content: {完整报告Markdown内容，使用标准格式}
 
 ### 步骤3：生成摘要并发送到群
 
-使用 `bash` 工具创建摘要文件：
+使用 `write_file` 工具创建摘要文件 `/tmp/web3-developer-biweekly-summary.txt`，内容格式：
 
-```bash
-SUMMARY_FILE="/tmp/web3-developer-biweekly-$(date +%Y%m%d).txt"
-cat > "$SUMMARY_FILE" << 'EOFSUM'
-👨‍💻 开发资源：{总数}
+```
+{对应的emoji} {报告类型}：{实际数量}
 
 📄 完整报告文档：
-{从步骤1获取的飞书文档URL}
+{步骤1返回的实际飞书文档URL}
 
-数据来源：{来源数}
-EOFSUM
+数据来源：{实际来源数}
 ```
 
 然后使用 `send_feishu_file_content` 工具：
 
 ```
-filePath: 摘要文件路径
-chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
-title: '👨‍💻 Web3开发者双周报'
+filePath: "/tmp/web3-developer-biweekly-summary.txt"
+chatId: "oc_53d1a541f08d2d9f2e8c3c79a1f12fc3"
+title: "👨‍💻 Web3开发者双周报"
 maxLength: 1000
 ```
-
-## ⚠️ 注意事项
-
-1. 所有步骤必须成功完成
-2. 使用标准Markdown格式（### 标题，不要用 • \*\* 等符号）
-3. 确保文档中所有URL完整可点击

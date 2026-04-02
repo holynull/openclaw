@@ -1,17 +1,20 @@
----
+## **⚠️ 执行模式：自动执行，无需确认！立即开始执行所有步骤。**
+
 name: blockchain-research-weekly
 description: |
-  🔬 区块链研究周报生成与发送
+🔬 区块链研究周报生成与发送
 
-  汇总一周内区块链研究与投资动态，包含：
-  - 💡 VC观点与市场分析
-  - 📈 链上数据与合规分析
-  - 💼 融资动态
-  - 🔬 深度研究
-  - 🌐 宏观环境
+汇总一周内区块链研究与投资动态，包含：
 
-  数据源：8个RSS，优先web_fetch，不足时web_search降级
-  输出格式：飞书文档 + 摘要消息
+- 💡 VC观点与市场分析
+- 📈 链上数据与合规分析
+- 💼 融资动态
+- 🔬 深度研究
+- 🌐 宏观环境
+
+数据源：8个RSS，优先web_fetch，不足时web_search降级
+输出格式：飞书文档 + 摘要消息
+
 ---
 
 # 区块链研究周报生成 Skill
@@ -153,31 +156,22 @@ content: {完整报告Markdown内容，使用标准格式}
 
 ### 步骤3：生成摘要并发送到群
 
-使用 `bash` 工具创建摘要文件：
+使用 `write_file` 工具创建摘要文件 `/tmp/blockchain-research-weekly-summary.txt`，内容格式：
 
-```bash
-SUMMARY_FILE="/tmp/blockchain-research-weekly-$(date +%Y%m%d).txt"
-cat > "$SUMMARY_FILE" << 'EOFSUM'
-🔬 研究报告：{总数}
+```
+{对应的emoji} {报告类型}：{实际数量}
 
 📄 完整报告文档：
-{从步骤1获取的飞书文档URL}
+{步骤1返回的实际飞书文档URL}
 
-数据来源：{来源数}
-EOFSUM
+数据来源：{实际来源数}
 ```
 
 然后使用 `send_feishu_file_content` 工具：
 
 ```
-filePath: 摘要文件路径
-chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
-title: '🔬 区块链研究周报'
+filePath: "/tmp/blockchain-research-weekly-summary.txt"
+chatId: "oc_53d1a541f08d2d9f2e8c3c79a1f12fc3"
+title: "🔬 区块链研究周报"
 maxLength: 1000
 ```
-
-## ⚠️ 注意事项
-
-1. 所有步骤必须成功完成
-2. 使用标准Markdown格式（### 标题，不要用 • \*\* 等符号）
-3. 确保文档中所有URL完整可点击
