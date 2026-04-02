@@ -15,7 +15,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "现在立即执行：读取 ~/.openclaw/skills/chinese-blockchain-daily/SKILL.md 文件，严格按照里面的指令生成中文区块链日报并发送到飞书群"
+        "message": "生成并发送中文区块链日报"
       },
       "delivery": {
         "mode": "none"
@@ -46,7 +46,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 blockchain-security-daily skill 生成并发送区块链安全日报"
+        "message": "生成并发送区块链安全日报"
       },
       "delivery": {
         "mode": "none"
@@ -77,7 +77,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 blockchain-project-weekly skill 生成并发送区块链项目周报"
+        "message": "生成并发送区块链项目周报"
       },
       "delivery": {
         "mode": "none"
@@ -100,7 +100,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 blockchain-research-weekly skill 生成并发送区块链研究周报"
+        "message": "生成并发送区块链研究周报"
       },
       "delivery": {
         "mode": "none"
@@ -123,7 +123,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 web3-developer-biweekly skill 生成并发送Web3开发者双周报"
+        "message": "生成并发送Web3开发者双周报"
       },
       "delivery": {
         "mode": "none"
@@ -146,7 +146,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 bitcoin-tech-monthly skill 生成并发送比特币技术月报"
+        "message": "生成并发送比特币技术月报"
       },
       "delivery": {
         "mode": "none"
