@@ -47,6 +47,12 @@ User says ANY of these patterns → YOU MUST call cron.add:
 
 **3. NEW: When user references previous conversation or wants rich context, YOU SHOULD use the `details` parameter!**
 
+**4. 🆕 IMPORTANT: Auto-extract reply/quote context!**
+
+- When user's reminder request is **replying to a message**, ALWAYS extract that message content to `details`
+- When user says "刚才说的"/"之前提到的", extract the referenced conversation to `details`
+- Format: Include both the original message and your response if applicable
+
 ## Tool: `send_feishu_reminder`
 
 Parameters:
@@ -126,6 +132,84 @@ send_feishu_reminder(
   message='⏰ 提醒大家：今日任务',
   details='今日任务清单：\n✅ 1. 完成API文档（负责人：李四）\n✅ 2. 代码审查（负责人：王五）\n✅ 3. 部署到测试环境（负责人：赵六）\n\n截止时间：今日18:00',
   mentionUserId='all'
+)
+```
+
+### 🆕 Reply-based reminder (Auto-extract reply context)
+
+**Scenario:** User replies to a previous message asking for a reminder
+
+Original message (from user or others):
+
+```
+我们需要优化部署流程：
+1. 使用滚动更新
+2. 增加健康检查
+3. 配置自动回滚
+```
+
+User replies to that message:
+
+```
+2分钟后提醒我这个方案
+```
+
+**CRITICAL:** System provides reply context in metadata:
+
+```json
+{
+  "has_reply_context": true,
+  "reply_to_id": "om_xxx",
+  "replied_message": {
+    "body": "我们需要优化部署流程：\n1. 使用滚动更新\n2. 增加健康检查\n3. 配置自动回滚"
+  }
+}
+```
+
+**YOU MUST extract this to details!**
+
+Tool call:
+
+```python
+send_feishu_reminder(
+  targetId='ou_xxx',
+  message='⏰ 提醒：部署优化方案',
+  details='引用的消息：\n"我们需要优化部署流程：\n1. 使用滚动更新\n2. 增加健康检查\n3. 配置自动回滚"'
+)
+```
+
+### 🆕 Reply with your response context
+
+**Scenario:** User had a question, you answered, user wants reminder
+
+User asked:
+
+```
+Docker 日志应该存储在哪里？
+```
+
+You answered:
+
+```
+建议使用 volume 挂载到宿主机，这样便于：
+1. 日志持久化保存
+2. 容器重启不丢失
+3. 便于集中收集和分析
+```
+
+User replies to their own question:
+
+```
+1小时后提醒我这个 Docker 日志的方案
+```
+
+Tool call:
+
+```python
+send_feishu_reminder(
+  targetId='ou_xxx',
+  message='⏰ 提醒：Docker 日志存储方案',
+  details='问题：Docker 日志应该存储在哪里？\n\n方案：\n使用 volume 挂载到宿主机，这样便于：\n1. 日志持久化保存\n2. 容器重启不丢失\n3. 便于集中收集和分析'
 )
 ```
 
@@ -216,9 +300,12 @@ For user message: "2分钟后提醒大家多运动"
    - Contains "提醒大家" or "提醒所有人" → set `mentionUserId='all'`
    - Contains "提醒我" in group → set `mentionUserId='ou_sender'`
    - No specific target → omit mentionUserId
-5. Extract context from conversation if user references previous discussion:
-   - User says "刚才说的" / "之前提到的" → include relevant context in `details`
-   - User says "那个问题" / "那件事" → summarize the referenced topic in `details`
+5. **🆕 Extract context from conversation (CRITICAL for rich reminders):**
+   - **PRIORITY 1:** If message has `has_reply_context: true` → ALWAYS extract `replied_message.body` to `details`
+   - **PRIORITY 2:** User says "刚才说的" / "之前提到的" → include relevant context in `details`
+   - **PRIORITY 3:** User says "那个问题" / "那件事" → summarize the referenced topic in `details`
+   - **PRIORITY 4:** User says "回复XX的问题" → include both question and suggested answer in `details`
+   - Format details with clear structure: "引用的消息：\n[content]" or "问题：\n[question]\n\n方案：\n[answer]"
 6. Call `cron.add` tool with send_feishu_reminder in payload.message
 7. Reply to user: "好，[time description] 我会提醒[target]"
 8. Job executes at scheduled time → sends reminder (with rich card if details provided)
