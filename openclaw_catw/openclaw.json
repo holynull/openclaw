@@ -204,7 +204,15 @@
           "primary": "openai/gpt-5.4"
         },
         "skills": {
-          "allow": ["feishu-reminder"]
+          "allow": [
+            "feishu-reminder",
+            "chinese-blockchain-daily",
+            "blockchain-security-daily",
+            "blockchain-project-weekly",
+            "blockchain-research-weekly",
+            "web3-developer-biweekly",
+            "bitcoin-tech-monthly"
+          ]
         },
         "tools": {
           "profile": "full",
@@ -245,7 +253,15 @@
           "primary": "openai/gpt-4o"
         },
         "skills": {
-          "allow": ["feishu-reminder"]
+          "allow": [
+            "feishu-reminder",
+            "chinese-blockchain-daily",
+            "blockchain-security-daily",
+            "blockchain-project-weekly",
+            "blockchain-research-weekly",
+            "web3-developer-biweekly",
+            "bitcoin-tech-monthly"
+          ]
         },
         "tools": {
           "profile": "full",
