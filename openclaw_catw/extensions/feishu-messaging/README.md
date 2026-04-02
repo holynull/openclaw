@@ -8,18 +8,27 @@ OpenClaw 工具插件，用于发送飞书消息和通知。
 
 ### 1. `send_feishu_reminder`
 
-发送飞书提醒消息，支持私聊和群聊，支持 @提醒功能。
+发送飞书提醒消息，支持私聊和群聊，支持 @提醒功能，**支持富文本上下文和引用对话**。
 
 **参数：**
 
 - `targetId` (必填): 目标 ID
   - 私聊：用户 open_id，格式为 `ou_xxx`
   - 群聊：群 chat_id，格式为 `oc_xxx`
-- `message` (必填): 提醒消息内容
+- `message` (必填): 提醒消息主要内容
+- `details` (可选): 🆕 **附加上下文、引用对话或详细信息**
+  - 会以独立的格式化卡片区域显示
+  - 适合引用之前的对话内容、任务清单、问题详情等
+  - 支持多行文本和 Markdown 格式
 - `mentionUserId` (可选): @提醒的用户 ID
   - `ou_xxx`: @某个用户
   - `all`: @所有人
   - 仅在群聊中有效
+
+**消息格式：**
+
+- **无 `details`**: 发送简单文本消息
+- **有 `details`**: 发送富文本卡片消息（蓝色卡片头部 + 主要内容 + 上下文区域）
 
 **示例：**
 
@@ -30,10 +39,25 @@ OpenClaw 工具插件，用于发送飞书消息和通知。
   message: "⏰ 提醒：开会时间到了"
 }
 
+// 带上下文的提醒（引用对话）
+{
+  targetId: "ou_xxx",
+  message: "⏰ 提醒：回复张三的问题",
+  details: "张三的问题：\n\"部署流程中需要先停止服务还是可以滚动更新？\"\n\n你可以回复：建议使用滚动更新，无需停止服务。"
+}
+
 // 群聊提醒，不@
 {
   targetId: "oc_xxx",
   message: "⏰ 提醒：该吃饭了"
+}
+
+// 群聊提醒，带任务清单
+{
+  targetId: "oc_xxx",
+  message: "⏰ 提醒大家：今日任务",
+  details: "今日任务清单：\n✅ 1. 完成API文档（负责人：李四）\n✅ 2. 代码审查（负责人：王五）\n✅ 3. 部署到测试环境（负责人：赵六）\n\n截止时间：今日18:00",
+  mentionUserId: "all"
 }
 
 // 群聊提醒，@某人
@@ -84,7 +108,50 @@ FEISHU_APP_SECRET="xxx"
 
 ## 使用场景
 
-### 定时任务 (Cron Jobs)
+### 场景 1：引用对话提醒
+
+用户："2小时后提醒我回复刚才张三问的问题"
+
+Agent 会：
+
+- 提取张三之前的问题
+- 在 `details` 参数中包含问题内容
+- 发送富文本卡片提醒
+
+实际调用：
+
+```typescript
+send_feishu_reminder({
+  targetId: "ou_xxx",
+  message: "⏰ 提醒：回复张三的问题",
+  details:
+    '张三的问题：\n"部署流程中需要先停止服务还是可以滚动更新？"\n\n你可以回复：建议使用滚动更新，无需停止服务。',
+});
+```
+
+### 场景 2：任务总结提醒
+
+用户："明天早上9点提醒大家今天讨论的任务"
+
+Agent 会：
+
+- 总结对话中提到的任务
+- 格式化为列表放入 `details`
+- @all 发送到群组
+
+实际调用：
+
+```typescript
+send_feishu_reminder({
+  targetId: "oc_xxx",
+  message: "⏰ 提醒大家：今日任务",
+  details:
+    "今日任务清单：\n✅ 1. 完成API文档（负责人：李四）\n✅ 2. 代码审查（负责人：王五）\n✅ 3. 部署到测试环境（负责人：赵六）\n\n截止时间：今日18:00",
+  mentionUserId: "all",
+});
+```
+
+### 场景 3：定时任务 (Cron Jobs)
 
 在 `cron/cron-jobs.json` 中使用：
 
@@ -103,18 +170,19 @@ FEISHU_APP_SECRET="xxx"
 }
 ```
 
-### Agent 技能 (Skills)
+### 场景 4：Agent 技能 (Skills)
 
 在 workspace skills 中使用：
 
 ```markdown
 # Feishu Reminder Skill
 
-使用 `send_feishu_reminder` 工具发送飞书提醒。
+使用 `send_feishu_reminder` 工具发送飞书提醒。支持引用对话上下文。
 
 ## 示例
 
-- 私聊提醒：send_feishu_reminder(targetId="ou_xxx", message="...")
+- 简单提醒：send_feishu_reminder(targetId="ou_xxx", message="...")
+- 带上下文：send_feishu_reminder(targetId="ou_xxx", message="...", details="...")
 - 群聊@提醒：send_feishu_reminder(targetId="oc_xxx", message="...", mentionUserId="all")
 ```
 
