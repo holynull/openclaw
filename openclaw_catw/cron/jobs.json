@@ -15,7 +15,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 chinese-blockchain-daily skill 生成并发送中文区块链日报"
+        "message": "现在立即执行：读取 ~/.openclaw/skills/chinese-blockchain-daily/SKILL.md 文件，严格按照里面的指令生成中文区块链日报并发送到飞书群"
       },
       "delivery": {
         "mode": "none"
