@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "chinese-blockchain-daily",
+      "name": "中文区块链日报",
+      "enabled": true,
+      "agentId": "team_bot",
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 8 * * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "生成中文区块链日报，格式要求：\n\n📰 数据源（web_fetch获取最近24小时）：\n1. https://www.chainfeeds.xyz/rss\n2. https://www.panewslab.com/zh/rss/foryou.xml\n3. https://www.panewslab.com/zh/rss/newsflash.xml\n\n📝 报告格式（Feishu Markdown）：\n```\n📰 中文区块链日报\n{今天日期，格式：2026年4月2日 星期三}\n\n━━━━━━━━━━━━━━━━━━━━\n\n🔥 **热点事件**\n\n• **标题**\n  ⏰ 时间\n  📄 简述（50字内）\n  🔗 [来源链接](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n💼 **项目动态**\n\n• **标题**\n  ⏰ 时间 | 💰 融资金额（如有）\n  📄 简述\n  🔗 [来源](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n📈 **市场行情**\n（价格趋势、交易量变化）\n\n━━━━━━━━━━━━━━━━━━━━\n\n🏛️ **监管政策**\n（如有）\n\n━━━━━━━━━━━━━━━━━━━━\n\n🛡️ **安全提醒**\n（如有安全事件）\n\n━━━━━━━━━━━━━━━━━━━━\n\n📊 本日要闻：X条 | 按重要性排序\n```\n\n💾 保存并发送：\nREPORT_FILE=\"/tmp/cn-blockchain-$(date +%Y%m%d).txt\"\necho \"报告内容\" > \"$REPORT_FILE\"\nsend_feishu_file_content工具：filePath=\"$REPORT_FILE\", chatId='oc_53d1a541f08d2d9f2e8c3c79a1f12fc3', title='📰 中文区块链日报'"
+      },
+      "delivery": {
+        "mode": "none"
+      },
+      "state": {
+        "nextRunAtMs": 1775174400000
+      }
+    },
+    {
+      "id": "blockchain-security-daily-report",
+      "name": "区块链安全日报",
+      "enabled": true,
+      "agentId": "team_bot",
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "生成区块链安全日报，格式要求：\n\n📰 数据源策略：\n1. 优先 web_fetch 获取以下7个RSS（提取24小时内，包含关键词：hack/exploit/vulnerability/attack/security/breach/攻击/漏洞/安全的文章）：\n   • https://blog.chainalysis.com/feed/\n   • https://www.elliptic.co/blog/rss.xml\n   • https://blog.trailofbits.com/feed/\n   • https://blog.sigmaprime.io/feeds/all.atom.xml\n   • https://cointelegraph.com/rss\n   • https://blockworks.co/feed/\n   • https://www.panewslab.com/zh/rss/newsflash.xml\n\n2. 仅当从RSS中提取的安全事件<3条时，才使用 web_search 补充（节省Brave用量）\n\n📝 报告格式（Feishu Markdown）：\n```\n🛡️ 区块链安全日报\n{日期} | 数据来源：7家权威机构\n\n━━━━━━━━━━━━━━━━━━━━\n\n【今日概览】\n✅ 行业平稳 / ⚠️ X起安全事件\n💰 总损失金额：$XXX万（如有）\n\n━━━━━━━━━━━━━━━━━━━━\n\n🚨 **高危事件**\n\n▸ **项目名 - 事件标题**\n  ⏰ 发生时间\n  💰 影响金额：$XXX万\n  ⚔️ 攻击手法：闪电贷/重入/权限漏洞等\n  📊 当前状态：调查中/已追回/未追回\n  🔗 [详情](url) | 来源：机构名\n\n━━━━━━━━━━━━━━━━━━━━\n\n⚠️ **中危事件**\n\n▸ **标题**\n  （同上格式）\n\n━━━━━━━━━━━━━━━━━━━━\n\n📋 **审计发现**\n（智能合约审计发现的漏洞）\n\n━━━━━━━━━━━━━━━━━━━━\n\n🔐 **安全建议**\n• 风险提示\n• 防护措施\n\n━━━━━━━━━━━━━━━━━━━━\n\n📊 统计：本日X起事件 | 按严重程度排序\n```\n\n💾 保存并发送：\nREPORT_FILE=\"/tmp/security-$(date +%Y%m%d).txt\"\necho \"报告\" > \"$REPORT_FILE\"\nsend_feishu_file_content工具：filePath=\"$REPORT_FILE\", chatId='oc_53d1a541f08d2d9f2e8c3c79a1f12fc3', title='🛡️ 区块链安全日报'"
+      },
+      "delivery": {
+        "mode": "none"
+      },
+      "state": {
+        "nextRunAtMs": 1775178000000,
+        "lastRunAtMs": 1775112360760,
+        "lastRunStatus": "ok",
+        "lastStatus": "ok",
+        "lastDurationMs": 22676,
+        "lastDelivered": false,
+        "lastDeliveryStatus": "not-delivered",
+        "consecutiveErrors": 0
+      },
+      "updatedAtMs": 1775112383436
+    },
+    {
+      "id": "blockchain-project-weekly",
+      "name": "区块链项目周报",
+      "enabled": true,
+      "agentId": "team_bot",
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 10 * * 1",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "生成区块链项目周报，格式要求：\n\n📰 数据源（web_fetch获取9个项目RSS，最近7天）\n\n📝 报告格式（Feishu Markdown）：\n```\n📦 区块链项目周报\n第{周数}周 ({日期范围})\n\n━━━━━━━━━━━━━━━━━━━━\n\n【本周焦点】\n• 核心更新X项\n• 重要发布Y个\n• 生态合作Z次\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🏗️ Layer1/Layer2\n\n### Ethereum\n📦 **标题**\n⏰ 发布时间\n🔧 技术要点（协议升级/性能优化）\n🔗 [详情](url)\n\n### Polygon\n（同上格式）\n\n### Celestia\n（同上格式）\n\n━━━━━━━━━━━━━━━━━━━━\n\n## ⚙️ 基础设施\n\n### Chainlink (预言机)\n📦 **标题**\n⏰ 时间\n🤝 合作生态/🔧 技术更新\n🔗 [详情](url)\n\n### Alchemy / QuickNode (节点服务)\n（同上格式）\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 💼 DeFi/应用\n\n### Synthetix\n（同上格式）\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🔐 钱包/安全\n\n### Casa / Blockstream\n（同上格式）\n\n━━━━━━━━━━━━━━━━━━━━\n\n📚 **开发者资源**\n• 新文档/工具/教程\n\n━━━━━━━━━━━━━━━━━━━━\n\n📊 本周统计：X个项目 Y条更新\n```\n\n💾 保存并发送：\nREPORT_FILE=\"/tmp/project-weekly-$(date +%Y%m%d).txt\"\necho \"报告\" > \"$REPORT_FILE\"\nsend_feishu_file_content工具：filePath=\"$REPORT_FILE\", chatId='oc_53d1a541f08d2d9f2e8c3c79a1f12fc3', title='📦 区块链项目周报'"
+      },
+      "delivery": {
+        "mode": "none"
+      },
+      "state": {
+        "nextRunAtMs": 1775440800000
+      }
+    },
+    {
+      "id": "blockchain-research-weekly",
+      "name": "研究与投资周报",
+      "enabled": true,
+      "agentId": "team_bot",
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 10 * * 5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "生成研究与投资周报，格式要求：\n\n📰 数据源（web_fetch获取8个机构RSS，最近7天）\n\n📝 报告格式（Feishu Markdown）：\n```\n📊 研究与投资周报\n第{周数}周 ({日期})\n\n━━━━━━━━━━━━━━━━━━━━\n\n【本周摘要】\n📈 链上数据亮点\n💰 融资总额：$XXX万\n🔥 热门赛道：XXX\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 💡 VC观点\n\n▸ **标题** - Multicoin Capital\n  ⏰ 发布时间\n  💭 核心观点：（100字内概括）\n  🎯 看好方向：XXX赛道\n  🔗 [完整报告](url)\n\n▸ **标题** - Outlier Ventures / Placeholder\n  （同上格式）\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 📈 链上数据\n\n▸ **标题** - Chainalysis\n  📊 关键数据：\n  • 链上交易量：↑/↓ X%\n  • 活跃地址：XXX万\n  • 资金流向：XXX\n  🔗 [详情](url)\n\n▸ **标题** - Elliptic (合规分析)\n  （同上格式）\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 💼 融资动态\n\n▸ **项目名** 完成 $XXX 融资\n  💰 金额：Series X / 种子轮\n  🏢 领投：XXX\n  🎯 赛道：DeFi/NFT/Layer2等\n  🔗 [来源](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🔬 深度研究\n\n▸ **报告标题**\n  ✍️ 作者：机构名 / 分析师\n  🎯 主题：技术分析/市场研究\n  💡 核心洞察：（关键结论）\n  🔗 [原文](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🌐 宏观环境\n\n▸ **Lyn Alden 宏观分析**\n  📊 经济环境影响\n  💭 对加密市场的看法\n  🔗 [详情](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n📊 本周统计：X篇研究 | Y笔融资\n```\n\n💾 保存并发送：\nREPORT_FILE=\"/tmp/research-weekly-$(date +%Y%m%d).txt\"\necho \"报告\" > \"$REPORT_FILE\"\nsend_feishu_file_content工具：filePath=\"$REPORT_FILE\", chatId='oc_53d1a541f08d2d9f2e8c3c79a1f12fc3', title='📊 研究与投资周报'"
+      },
+      "delivery": {
+        "mode": "none"
+      },
+      "state": {
+        "nextRunAtMs": 1775181600000
+      }
+    },
+    {
+      "id": "web3-developer-biweekly",
+      "name": "Web3开发者双周报",
+      "enabled": true,
+      "agentId": "team_bot",
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 10 1,15 * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "生成 Web3 开发者双周报，格式要求：\n\n📰 数据源（web_fetch获取8个开发者RSS，最近14天）\n\n📝 报告格式（Feishu Markdown）：\n```\n👨‍💻 Web3开发者双周报\n{日期范围}\n\n━━━━━━━━━━━━━━━━━━━━\n\n【双周焦点】\n🔬 研究热点：XXX\n🛠️ 工具更新：X个\n📚 新教程：Y篇\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🔬 以太坊研究前沿\n\n### EIP提案 & 协议研究\n▸ **提案/讨论标题** - ethresear.ch\n  🏷️ 分类：共识机制/Layer2/ZK证明\n  💡 核心内容：（技术要点）\n  📊 讨论热度：X replies\n  🔗 [查看讨论](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🛠️ 开发工具 & SDK\n\n### 框架更新\n▸ **工具/库名 vX.X** - 来源\n  ⚙️ 新特性：\n  • 功能1\n  • 功能2\n  💻 适用场景\n  🔗 [文档](url)\n\n### Python Web3 (web3.py)\n▸ **更新标题** - Snake Charmers\n  🐍 Python工具链更新\n  📦 新功能/Bug修复\n  🔗 [详情](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 📚 技术教程 & 最佳实践\n\n▸ **教程标题** - LogRocket\n  🎯 主题：智能合约/Dapp开发\n  📖 内容概要：\n  • 关键步骤\n  • 最佳实践\n  💡 适合人群：初级/中级/高级\n  🔗 [阅读](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🏗️ 架构 & 设计模式\n\n▸ **智能合约模式/Dapp架构**\n  🏛️ 设计思路\n  ⚡ 性能优化\n  🔐 安全考虑\n  🔗 [详情](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🌐 标准 & 协议\n\n### ERC标准 / 跨链协议\n▸ **标准提案** - Enterprise Ethereum Alliance\n  📋 标准内容\n  🎯 应用场景\n  🔗 [规范](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n📊 本期统计：X个讨论 | Y篇教程 | Z个工具更新\n💡 开发者建议：（本期技术趋势总结）\n```\n\n💾 保存并发送：\nREPORT_FILE=\"/tmp/dev-biweekly-$(date +%Y%m%d).txt\"\necho \"报告\" > \"$REPORT_FILE\"\nsend_feishu_file_content工具：filePath=\"$REPORT_FILE\", chatId='oc_53d1a541f08d2d9f2e8c3c79a1f12fc3', title='👨‍💻 Web3开发者双周报'"
+      },
+      "delivery": {
+        "mode": "none"
+      },
+      "state": {
+        "nextRunAtMs": 1776218400000
+      }
+    },
+    {
+      "id": "bitcoin-tech-monthly",
+      "name": "比特币技术月报",
+      "enabled": true,
+      "agentId": "team_bot",
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 10 1 * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "生成比特币技术月报，格式要求：\n\n📰 数据源（web_fetch获取5个Bitcoin RSS，最近30天）\n\n📝 报告格式（Feishu Markdown）：\n```\n₿ 比特币技术月报\n{年月} ({日期范围})\n\n━━━━━━━━━━━━━━━━━━━━\n\n【本月概览】\n🔧 协议更新：X项\n⚡ Lightning进展：Y个\n📊 网络数据：算力/难度/费用变化\n\n━━━━━━━━━━━━━━━━━━━━\n\n## ⚙️ 协议 & BIP提案\n\n▸ **BIP-XXX / 软分叉提案** - Bitcoin Optech\n  📋 提案内容：（Taproot后续/新特性）\n  🔧 技术细节\n  📊 社区讨论进展\n  🔗 [详情](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## ⚡ Lightning Network\n\n▸ **闪电网络更新** - Blockstream / Optech\n  ⚡ 协议改进：（路由优化/通道管理）\n  📊 网络数据：\n  • 节点数：XXX\n  • 通道数：XXX\n  • 容量：X BTC\n  💡 新功能\n  🔗 [详情](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🔐 隐私技术\n\n▸ **Coinjoin / Schnorr 签名**\n  🔐 隐私增强方案\n  🛠️ 实现进展\n  🔗 [详情](url)\n\n▸ **Zcash 隐私技术** - Electric Coin / Zcash Foundation\n  🔐 零知识证明应用\n  🔧 协议更新\n  🔗 [详情](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🏦 钱包 & 自主保管\n\n▸ **Casa 多签钱包** / **硬件钱包更新**\n  🔐 安全特性\n  🛠️ 新功能：（多签/恢复）\n  💡 最佳实践\n  🔗 [详情](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🔗 侧链 & Layer2\n\n▸ **Liquid / RGB / BitVM**\n  🏗️ 侧链进展\n  ⚡ Layer2扩展方案\n  🔧 技术实现\n  🔗 [详情](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 🛠️ 开发者工具\n\n▸ **Bitcoin Core 更新**\n  📦 版本：vX.X\n  🔧 新特性/Bug修复\n  📚 开发库更新\n  🔗 [Release Notes](url)\n\n━━━━━━━━━━━━━━━━━━━━\n\n## 📈 网络数据统计\n\n📊 算力：XXX EH/s (↑/↓ X%)\n⛏️ 难度：XXX T (调整周期)\n💰 平均费用：X sat/vB\n📦 交易量：XXX万笔/天\n🔗 [数据来源](mempool.space)\n\n━━━━━━━━━━━━━━━━━━━━\n\n📊 本月统计：X项技术更新 | Y个生态进展\n💡 技术趋势：（月度总结）\n```\n\n💾 保存并发送：\nREPORT_FILE=\"/tmp/bitcoin-monthly-$(date +%Y%m%d).txt\"\necho \"报告\" > \"$REPORT_FILE\"\nsend_feishu_file_content工具：filePath=\"$REPORT_FILE\", chatId='oc_53d1a541f08d2d9f2e8c3c79a1f12fc3', title='₿ 比特币技术月报'"
+      },
+      "delivery": {
+        "mode": "none"
+      },
+      "state": {
+        "nextRunAtMs": 1777600800000
+      }
+    }
+  ]
+}
