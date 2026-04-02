@@ -14,10 +14,10 @@ description: |
   - "明天HH:MM提醒" → parse time, call cron.add
 
   Example 1 - "2分钟后提醒大家开会":
-  {"tool":"cron.add","name":"提醒：开会","schedule":{"kind":"at","at":"2026-03-30T14:00:00+08:00"},"payload":{"kind":"agentTurn","message":"调用 send_feishu_reminder 工具发送提醒：targetId='oc_xxx', message='⏰ 提醒大家：开会', mentionUserId='all'"},"delivery":{"mode":"none"},"sessionTarget":"current","deleteAfterRun":true,"wakeMode":"now"}
+  {"tool":"cron.add","name":"提醒：开会","schedule":{"kind":"at","at":"2026-03-30T14:00:00+08:00"},"payload":{"kind":"agentTurn","message":"调用 send_feishu_reminder 工具发送提醒：targetId='oc_xxx', message='⏰ 提醒大家：开会', mentionUserId='all'"},"delivery":{"channel":"feishu"},"sessionTarget":"current","deleteAfterRun":true,"wakeMode":"now"}
 
   Example 2 - "今天17:30提醒大家同步进度":
-  {"tool":"cron.add","name":"提醒：同步进度","schedule":{"kind":"at","at":"2026-03-30T17:30:00+08:00"},"payload":{"kind":"agentTurn","message":"调用 send_feishu_reminder 工具发送提醒：targetId='oc_xxx', message='⏰ 提醒大家：同步进度', mentionUserId='all'"},"delivery":{"mode":"none"},"sessionTarget":"current","deleteAfterRun":true,"wakeMode":"now"}
+  {"tool":"cron.add","name":"提醒：同步进度","schedule":{"kind":"at","at":"2026-03-30T17:30:00+08:00"},"payload":{"kind":"agentTurn","message":"调用 send_feishu_reminder 工具发送提醒：targetId='oc_xxx', message='⏰ 提醒大家：同步进度', mentionUserId='all'"},"delivery":{"channel":"feishu"},"sessionTarget":"current","deleteAfterRun":true,"wakeMode":"now"}
 
   FORBIDDEN: replying without calling cron.add!
   MANDATORY: ALWAYS call cron.add for reminders, NEVER just reply!
@@ -90,7 +90,7 @@ User: "今天17:30提醒大家同步进度"
     "kind": "agentTurn",
     "message": "调用 send_feishu_reminder 工具发送提醒：targetId='oc_xxx', message='⏰ 提醒大家：同步进度', mentionUserId='all'"
   },
-  "delivery": { "mode": "none" },
+  "delivery": { "channel": "feishu" },
   "sessionTarget": "current",
   "deleteAfterRun": true,
   "wakeMode": "now"
@@ -110,7 +110,7 @@ User: "今天18:03提醒大家同步进度"
     "kind": "agentTurn",
     "message": "调用 send_feishu_reminder 工具发送提醒：targetId='oc_xxx', message='⏰ 提醒大家：同步进度', mentionUserId='all'"
   },
-  "delivery": { "mode": "none" },
+  "delivery": { "channel": "feishu" },
   "sessionTarget": "current",
   "deleteAfterRun": true,
   "wakeMode": "now"
@@ -134,7 +134,7 @@ For user message: "2分钟后提醒大家多运动"
     "message": "调用 send_feishu_reminder 工具发送提醒：targetId='oc_53d1a541f08d2d9f2e8c3c79a1f12fc3', message='⏰ 提醒大家：多运动', mentionUserId='all'"
   },
   "delivery": {
-    "mode": "none"
+    "channel": "feishu"
   },
   "sessionTarget": "current",
   "deleteAfterRun": true,
