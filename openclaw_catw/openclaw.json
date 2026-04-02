@@ -310,7 +310,17 @@
       "cron",
       "gateway"
     ],
-    "deny": ["camera", "canvas", "nodes"]
+    "deny": ["camera", "canvas", "nodes"],
+    "web": {
+      "search": {
+        "enabled": true,
+        "provider": "brave",
+        "apiKey": "${BRAVE_API_KEY}",
+        "maxResults": 10,
+        "timeoutSeconds": 30,
+        "cacheTtlMinutes": 15
+      }
+    }
   },
   "bindings": [
     {
