@@ -10,7 +10,7 @@ description: |
   - 🔐 钱包/安全
   - 📚 开发者资源
 
-  数据源：9个项目RSS，使用 web_fetch
+  数据源：9个RSS，优先web_fetch，不足时web_search降级
   输出格式：飞书文档 + 摘要消息
 ---
 
@@ -20,9 +20,30 @@ description: |
 
 生成区块链项目周报并发送到飞书群，汇总本周各主要项目的技术更新和生态进展。
 
-## 📰 数据源
+## 📰 数据源策略（降级方案）
+
+### 优先方案：web_fetch（免费）
 
 使用 `web_fetch` 工具获取9个项目RSS，提取最近7天的更新
+
+### 降级方案：web_search
+
+**触发条件**：当从RSS中提取的项目更新<10条时，使用 `web_search` 补充
+
+搜索策略（每个关键词 count=5，freshness="week"）：
+
+- "Ethereum protocol upgrade" - 以太坊协议升级
+- "Polygon zkEVM update" - Polygon技术更新
+- "Chainlink integration" - Chainlink生态合作
+- "Layer2 scaling solution" - Layer2扩展方案
+- "DeFi protocol launch" - DeFi协议发布
+- "blockchain infrastructure" - 区块链基础设施
+
+**质量要求**：
+
+- 优先选择官方博客、技术文档、权威媒体的内容
+- 至少收集15条有效项目更新
+- 每条包含：项目名、更新内容、发布时间、来源链接
 
 ## 📝 报告格式（Feishu Markdown）
 

@@ -12,7 +12,7 @@ description: |
   - 🛠️ 开发者工具
   - 📈 网络数据统计
 
-  数据源：5个Bitcoin RSS，使用 web_fetch
+  数据源：5个RSS，优先web_fetch，不足时web_search降级
   输出格式：飞书文档 + 摘要消息
 ---
 
@@ -22,9 +22,30 @@ description: |
 
 生成比特币技术月报并发送到飞书群，汇总协议更新、闪电网络进展和生态发展。
 
-## 📰 数据源
+## 📰 数据源策略（降级方案）
+
+### 优先方案：web_fetch（免费）
 
 使用 `web_fetch` 工具获取5个Bitcoin RSS，提取最近30天的内容
+
+### 降级方案：web_search
+
+**触发条件**：当从RSS中提取的技术更新<8条时，使用 `web_search` 补充
+
+搜索策略（每个关键词 count=5，freshness="month"）：
+
+- "Bitcoin BIP proposal" - BIP提案
+- "Lightning Network update" - 闪电网络进展
+- "Bitcoin Core release" - Bitcoin Core更新
+- "Taproot activation" - Taproot相关进展
+- "Bitcoin privacy technology" - 比特币隐私技术
+- "Bitcoin mining difficulty" - 挖矿难度调整
+
+**质量要求**：
+
+- 优先选择Bitcoin Optech、开发者博客、官方发布的内容
+- 至少收集12条有效技术更新
+- 每条包含：类型（协议/网络/工具）、技术要点、影响、来源链接
 
 ## 📝 报告格式（Feishu Markdown）
 

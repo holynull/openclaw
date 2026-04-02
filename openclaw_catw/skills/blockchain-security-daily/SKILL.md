@@ -35,9 +35,24 @@ RSS源列表：
 - https://blockworks.co/feed/
 - https://www.panewslab.com/zh/rss/newsflash.xml
 
-### 降级方案
+### 降级方案：web_search
 
-**仅当从RSS中提取的安全事件<3条时**，才使用 `web_search` 补充（节省Brave用量）
+**触发条件**：仅当从RSS中提取的安全事件<3条时，才使用 `web_search` 补充（节省Brave用量）
+
+搜索策略（每个关键词 count=5，freshness="day"）：
+
+- "blockchain hack exploit" - 区块链黑客攻击
+- "smart contract vulnerability" - 智能合约漏洞
+- "crypto security breach" - 加密货币安全漏洞
+- "DeFi protocol attack" - DeFi协议攻击
+- "blockchain audit findings" - 区块链审计发现
+- "cryptocurrency theft" - 加密货币盗窃
+
+**质量要求**：
+
+- 优先选择安全公司、审计机构、官方公告的内容
+- 至少收集8条有效安全事件
+- 每条包含：项目名、事件类型、影响范围、损失金额（如有）、来源链接
 
 ## 📝 报告格式（Feishu Markdown）
 

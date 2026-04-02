@@ -10,7 +10,7 @@ description: |
   - 🔬 深度研究
   - 🌐 宏观环境
 
-  数据源：8个机构RSS，使用 web_fetch
+  数据源：8个RSS，优先web_fetch，不足时web_search降级
   输出格式：飞书文档 + 摘要消息
 ---
 
@@ -20,9 +20,30 @@ description: |
 
 生成区块链研究周报并发送到飞书群，汇总VC观点、链上数据、融资动态和深度研究。
 
-## 📰 数据源
+## 📰 数据源策略（降级方案）
+
+### 优先方案：web_fetch（免费）
 
 使用 `web_fetch` 工具获取8个机构RSS，提取最近7天的内容
+
+### 降级方案：web_search
+
+**触发条件**：当从RSS中提取的研究内容<8条时，使用 `web_search` 补充
+
+搜索策略（每个关键词 count=5，freshness="week"）：
+
+- "blockchain venture capital funding" - 区块链融资动态
+- "crypto VC investment thesis" - VC投资观点
+- "on-chain analytics report" - 链上数据分析
+- "blockchain research paper" - 区块链研究报告
+- "crypto market analysis" - 加密市场分析
+- "DeFi TVL trends" - DeFi锁仓趋势
+
+**质量要求**：
+
+- 优先选择知名VC机构、分析平台、研究机构的内容
+- 至少收集12条有效研究/分析内容
+- 每条包含：机构名、研究主题、核心观点、来源链接
 
 ## 📝 报告格式（Feishu Markdown）
 

@@ -10,7 +10,7 @@ description: |
   - 🏗️ 架构 & 设计模式
   - 🌐 标准 & 协议
 
-  数据源：8个开发者RSS，使用 web_fetch
+  数据源：8个RSS，优先web_fetch，不足时web_search降级
   输出格式：飞书文档 + 摘要消息
 ---
 
@@ -20,9 +20,30 @@ description: |
 
 生成Web3开发者双周报并发送到飞书群，汇总最新开发工具、教程和技术讨论。
 
-## 📰 数据源
+## 📰 数据源策略（降级方案）
+
+### 优先方案：web_fetch（免费）
 
 使用 `web_fetch` 工具获取8个开发者RSS，提取最近14天的内容
+
+### 降级方案：web_search
+
+**触发条件**：当从RSS中提取的开发资源<10条时，使用 `web_search` 补充
+
+搜索策略（每个关键词 count=5，freshness="2week"）：
+
+- "Ethereum EIP proposal" - EIP提案
+- "web3 development tutorial" - Web3开发教程
+- "smart contract best practices" - 智能合约最佳实践
+- "Solidity security audit" - Solidity安全审计
+- "blockchain SDK update" - 区块链SDK更新
+- "ethers.js web3.js tutorial" - 开发库教程
+
+**质量要求**：
+
+- 优先选择官方文档、技术博客、知名开发者的内容
+- 至少收集15条有效开发资源
+- 每条包含：资源类型（工具/教程/提案）、标题、适用场景、来源链接
 
 ## 📝 报告格式（Feishu Markdown）
 
