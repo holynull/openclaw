@@ -244,6 +244,9 @@
         "model": {
           "primary": "openai/gpt-4o"
         },
+        "skills": {
+          "allow": ["feishu-reminder"]
+        },
         "tools": {
           "profile": "full",
           "deny": ["write", "edit", "apply_patch"],
