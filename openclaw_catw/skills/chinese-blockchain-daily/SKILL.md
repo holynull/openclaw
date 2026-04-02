@@ -130,9 +130,11 @@ description: |
 
 ## 4️⃣ 保存并发送
 
+### ⚠️ 重要：必须严格按顺序执行，不可并行
+
 ### 步骤1：创建飞书文档
 
-使用 `feishu_doc` 工具：
+使用 `feishu_doc` 工具创建文档：
 
 ```
 action: 'create'
@@ -140,30 +142,38 @@ title: '📰 中文区块链日报 | {日期}'
 grant_to_requester: true
 ```
 
+**等待步骤1完成，记录返回的 document_id**
+
 ### 步骤2：写入报告内容
 
-使用 `feishu_doc` 工具：
+**必须等步骤1成功后才能执行！** 使用步骤1返回的真实 `document_id`：
 
 ```
 action: 'write'
-doc_token: {从步骤1获取的document_id}
+doc_token: {步骤1返回的实际document_id，例如 "Qpdrds7zLouAqUx8WnBjw6Wapaf"}
 content: {完整日报Markdown内容，使用上述格式}
 ```
 
+**注意：doc_token 必须是步骤1返回结果中的 document_id，不能使用占位符！**
+
 ### 步骤3：生成摘要并发送到群
 
-使用 `bash` 工具创建摘要文件：
+**必须等步骤1和步骤2都成功后才能执行！**
+
+首先使用 `bash` 工具创建摘要文件，**使用步骤1返回的真实文档URL**：
 
 ```bash
 SUMMARY_FILE="/tmp/daily-summary-$(date +%Y%m%d).txt"
-cat > "$SUMMARY_FILE" << 'EOFSUM'
+DOC_URL="{步骤1返回的实际url，例如 https://feishu.cn/docx/Qpdrds7zLouAqUx8WnBjw6Wapaf}"
+
+cat > "$SUMMARY_FILE" << EOFSUM
 📊 今日要闻：{X}条
 • 🔥 重大事件：{N}条
 • 💰 融资项目：{N}条
 • 📊 市场动态：{N}条
 
 📄 完整报告文档：
-{从步骤1获取的飞书文档URL}
+$DOC_URL
 
 数据源：{Y}家
 EOFSUM
