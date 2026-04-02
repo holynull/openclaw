@@ -1,0 +1,14 @@
+{
+  "name": "@openclaw/feishu-messaging",
+  "version": "1.0.0",
+  "description": "Feishu messaging tools for sending reminders and reports",
+  "type": "module",
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.48"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

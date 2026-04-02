@@ -1,0 +1,10 @@
+{
+  "id": "feishu-messaging",
+  "name": "Feishu Messaging",
+  "description": "Tools for sending messages and notifications to Feishu/Lark",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

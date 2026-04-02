@@ -414,7 +414,7 @@
     }
   },
   "plugins": {
-    "allow": ["blockchain-tools", "telegram", "feishu"],
+    "allow": ["blockchain-tools", "telegram", "feishu", "feishu-messaging"],
     "entries": {
       "blockchain-tools": {
         "enabled": true
