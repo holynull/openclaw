@@ -329,7 +329,7 @@ export default function (api: any) {
         // Build message with optional title
         const messageTitle = title || `📊 Report from ${filePath}`;
         const timestamp = new Date().toISOString().split("T")[0];
-        const fullMessage = `${messageTitle}\n📅 ${timestamp}\n\n${fileContent}\n\n[Source: ${filePath}]`;
+        const fullMessage = `${messageTitle}\n📅 ${timestamp}\n\n${fileContent}`;
 
         // Get access token
         const accessToken = await getFeishuAccessToken(appId, appSecret);
