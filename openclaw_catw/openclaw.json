@@ -176,7 +176,13 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "openai/gpt-5.4"
+        "primary": "maynor1024-openai/gpt-4o",
+        "fallbacks": [
+          "maynor1024-anthropic/claude-sonnet-4-5-20250929",
+          "maynor1024-anthropic/claude-sonnet-4-6",
+          "openai/gpt-4o",
+          "openai/gpt-5.4"
+        ]
       },
       "models": {
         "gptsapi/claude-sonnet-4-6": {},
@@ -201,7 +207,7 @@
         "name": "Main Agent",
         "workspace": "/home/node/.openclaw/workspace/main",
         "model": {
-          "primary": "openai/gpt-5.4"
+          "primary": "maynor1024-openai/gpt-4o"
         },
         "skills": [
           "feishu-reminder",
@@ -248,7 +254,7 @@
         "name": "Team Assistant",
         "workspace": "/home/node/.openclaw/workspace/team",
         "model": {
-          "primary": "openai/gpt-4o"
+          "primary": "maynor1024-openai/gpt-4o"
         },
         "skills": [
           "feishu-reminder",
@@ -262,6 +268,147 @@
         "tools": {
           "profile": "full",
           "deny": ["write", "edit", "apply_patch"],
+          "alsoAllow": [
+            "sessions_spawn",
+            "subagents",
+            "eth_get_balance",
+            "eth_get_token_balance",
+            "eth_estimate_gas",
+            "eth_get_transaction",
+            "eth_get_token_info",
+            "eth_get_nonce",
+            "eth_call",
+            "eth_get_block",
+            "eth_get_logs",
+            "eth_get_gas_price",
+            "btc_get_balance",
+            "btc_get_transaction",
+            "btc_get_block",
+            "btc_get_utxos",
+            "btc_get_address_info",
+            "sol_get_balance",
+            "sol_get_token_balance",
+            "sol_get_transaction",
+            "sol_get_account_info",
+            "sol_get_token_accounts",
+            "sol_get_token_supply",
+            "get_token_price",
+            "decode_address"
+          ]
+        }
+      },
+      {
+        "id": "user_2dcb9617",
+        "name": "User Brian Agent",
+        "workspace": "/home/node/.openclaw/workspace/user_2dcb9617",
+        "model": {
+          "primary": "maynor1024-openai/gpt-4o"
+        },
+        "skills": [
+          "feishu-reminder",
+          "chinese-blockchain-daily",
+          "blockchain-security-daily",
+          "blockchain-project-weekly",
+          "blockchain-research-weekly",
+          "web3-developer-biweekly",
+          "bitcoin-tech-monthly"
+        ],
+        "tools": {
+          "profile": "full",
+          "alsoAllow": [
+            "sessions_spawn",
+            "subagents",
+            "eth_get_balance",
+            "eth_get_token_balance",
+            "eth_estimate_gas",
+            "eth_get_transaction",
+            "eth_get_token_info",
+            "eth_get_nonce",
+            "eth_call",
+            "eth_get_block",
+            "eth_get_logs",
+            "eth_get_gas_price",
+            "btc_get_balance",
+            "btc_get_transaction",
+            "btc_get_block",
+            "btc_get_utxos",
+            "btc_get_address_info",
+            "sol_get_balance",
+            "sol_get_token_balance",
+            "sol_get_transaction",
+            "sol_get_account_info",
+            "sol_get_token_accounts",
+            "sol_get_token_supply",
+            "get_token_price",
+            "decode_address"
+          ]
+        }
+      },
+      {
+        "id": "user_5b01aadf",
+        "name": "User Jingle Agent",
+        "workspace": "/home/node/.openclaw/workspace/user_5b01aadf",
+        "model": {
+          "primary": "maynor1024-openai/gpt-4o"
+        },
+        "skills": [
+          "feishu-reminder",
+          "chinese-blockchain-daily",
+          "blockchain-security-daily",
+          "blockchain-project-weekly",
+          "blockchain-research-weekly",
+          "web3-developer-biweekly",
+          "bitcoin-tech-monthly"
+        ],
+        "tools": {
+          "profile": "full",
+          "alsoAllow": [
+            "sessions_spawn",
+            "subagents",
+            "eth_get_balance",
+            "eth_get_token_balance",
+            "eth_estimate_gas",
+            "eth_get_transaction",
+            "eth_get_token_info",
+            "eth_get_nonce",
+            "eth_call",
+            "eth_get_block",
+            "eth_get_logs",
+            "eth_get_gas_price",
+            "btc_get_balance",
+            "btc_get_transaction",
+            "btc_get_block",
+            "btc_get_utxos",
+            "btc_get_address_info",
+            "sol_get_balance",
+            "sol_get_token_balance",
+            "sol_get_transaction",
+            "sol_get_account_info",
+            "sol_get_token_accounts",
+            "sol_get_token_supply",
+            "get_token_price",
+            "decode_address"
+          ]
+        }
+      },
+      {
+        "id": "user_0ba4f924",
+        "name": "User Ericshi Agent",
+        "workspace": "/home/node/.openclaw/workspace/user_0ba4f924",
+        "model": {
+          "primary": "maynor1024-openai/gpt-4o"
+        },
+        "skills": [
+          "feishu-reminder",
+          "chinese-blockchain-daily",
+          "blockchain-security-daily",
+          "blockchain-project-weekly",
+          "blockchain-research-weekly",
+          "web3-developer-biweekly",
+          "bitcoin-tech-monthly"
+        ],
+        "tools": {
+          "profile": "full",
           "alsoAllow": [
             "sessions_spawn",
             "subagents",
@@ -356,6 +503,39 @@
           "id": "oc_53d1a541f08d2d9f2e8c3c79a1f12fc3"
         }
       }
+    },
+    {
+      "agentId": "user_2dcb9617",
+      "match": {
+        "channel": "feishu",
+        "accountId": "default",
+        "peer": {
+          "kind": "direct",
+          "id": "ou_2dcb9617375642c9363d3b6d622bad17"
+        }
+      }
+    },
+    {
+      "agentId": "user_5b01aadf",
+      "match": {
+        "channel": "feishu",
+        "accountId": "default",
+        "peer": {
+          "kind": "direct",
+          "id": "ou_5b01aadfe99cc01664758d900f4b2da6"
+        }
+      }
+    },
+    {
+      "agentId": "user_0ba4f924",
+      "match": {
+        "channel": "feishu",
+        "accountId": "default",
+        "peer": {
+          "kind": "direct",
+          "id": "ou_0ba4f924e64582ec3d42408ad1c2aa3e"
+        }
+      }
     }
   ],
   "commands": {
@@ -395,7 +575,12 @@
       "domain": "lark",
       "botName": "Doraemon",
       "dmPolicy": "allowlist",
-      "allowFrom": ["ou_0fa58dc0ea9bebec570346e829677da7"],
+      "allowFrom": [
+        "ou_0fa58dc0ea9bebec570346e829677da7",
+        "ou_2dcb9617375642c9363d3b6d622bad17",
+        "ou_5b01aadfe99cc01664758d900f4b2da6",
+        "ou_0ba4f924e64582ec3d42408ad1c2aa3e"
+      ],
       "groupPolicy": "allowlist",
       "groupAllowFrom": ["oc_53d1a541f08d2d9f2e8c3c79a1f12fc3"],
       "groups": {
