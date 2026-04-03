@@ -1,17 +1,7 @@
 ---
 name: blockchain-project-weekly
-description: |
-  📦 区块链项目周报生成与发送
-
-  汇总一周内区块链项目更新，包含：
-  - 🏗️ Layer1/Layer2 (Ethereum, Polygon, Celestia)
-  - ⚙️ 基础设施 (Chainlink, Alchemy, QuickNode)
-  - 💼 DeFi/应用
-  - 🔐 钱包/安全
-  - 📚 开发者资源
-
-  数据源：9个RSS，优先web_fetch，不足时web_search降级
-  输出格式：飞书文档 + 摘要消息
+description: "Generate weekly blockchain project updates covering Layer1/Layer2, infrastructure, and DeFi"
+metadata: { "openclaw": { "emoji": "📦" } }
 ---
 
 # 区块链项目周报生成 Skill
@@ -175,7 +165,7 @@ EOFSUM
 
 ```
 filePath: 摘要文件路径
-chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
+chatId: 'ou_0fa58dc0ea9bebec570346e829677da7'
 title: '📦 区块链项目周报'
 maxLength: 1000
 ```

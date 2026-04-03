@@ -273,7 +273,7 @@ export default function (api: any) {
         description: "Path to the file to read and send",
       }),
       chatId: Type.String({
-        description: "Feishu chat ID (oc_xxx) to send the message to",
+        description: "Feishu chat ID (oc_xxx for group chat) or user ID (ou_xxx for private chat)",
       }),
       title: Type.Optional(
         Type.String({
@@ -291,11 +291,16 @@ export default function (api: any) {
       try {
         const { filePath, chatId, title, maxLength = 2800 } = params;
 
-        // Validate chat ID
-        if (!chatId.startsWith("oc_")) {
+        // Validate chat ID and determine receive type
+        let receiveIdType: string;
+        if (chatId.startsWith("oc_")) {
+          receiveIdType = "chat_id";
+        } else if (chatId.startsWith("ou_")) {
+          receiveIdType = "open_id";
+        } else {
           return {
             success: false,
-            error: `Invalid chat ID: ${chatId}. Must start with oc_`,
+            error: `Invalid chat ID: ${chatId}. Must start with oc_ (group chat) or ou_ (user)`,
           };
         }
 
@@ -335,15 +340,16 @@ export default function (api: any) {
         const accessToken = await getFeishuAccessToken(appId, appSecret);
 
         // Send message
-        const messageId = await sendFeishuMessage(accessToken, chatId, "chat_id", fullMessage);
+        const messageId = await sendFeishuMessage(accessToken, chatId, receiveIdType, fullMessage);
 
         return {
           success: true,
           chatId,
+          receiveIdType,
           messageId,
           filePath,
           contentLength: fileContent.length,
-          message: `✅ File content sent successfully to chat`,
+          message: `✅ File content sent successfully to ${receiveIdType === "open_id" ? "user" : "chat"}`,
         };
       } catch (error: any) {
         return {

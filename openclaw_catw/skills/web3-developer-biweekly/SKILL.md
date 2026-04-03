@@ -1,20 +1,7 @@
-## **⚠️ 执行模式：自动执行，无需确认！立即开始执行所有步骤。**
-
+---
 name: web3-developer-biweekly
-description: |
-👨‍💻 Web3开发者双周报生成与发送
-
-汇总两周内Web3开发资源，包含：
-
-- 🔬 以太坊研究前沿（EIP提案、协议研究）
-- 🛠️ 开发工具 & SDK
-- 📚 技术教程 & 最佳实践
-- 🏗️ 架构 & 设计模式
-- 🌐 标准 & 协议
-
-数据源：8个RSS，优先web_fetch，不足时web_search降级
-输出格式：飞书文档 + 摘要消息
-
+description: "Generate biweekly Web3 developer digest with EIP proposals, dev tools, tutorials, and best practices"
+metadata: { "openclaw": { "emoji": "👨‍💻" } }
 ---
 
 # Web3开发者双周报生成 Skill
@@ -181,7 +168,7 @@ content: {完整报告Markdown内容，使用标准格式}
 
 ```
 filePath: "/tmp/web3-developer-biweekly-summary.txt"
-chatId: "oc_53d1a541f08d2d9f2e8c3c79a1f12fc3"
+chatId: "ou_0fa58dc0ea9bebec570346e829677da7"
 title: "👨‍💻 Web3开发者双周报"
 maxLength: 1000
 ```

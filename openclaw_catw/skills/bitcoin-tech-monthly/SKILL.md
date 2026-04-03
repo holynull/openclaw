@@ -1,19 +1,7 @@
 ---
 name: bitcoin-tech-monthly
-description: |
-  ₿ 比特币技术月报生成与发送
-
-  汇总一个月内比特币技术进展，包含：
-  - ⚙️ 协议 & BIP提案
-  - ⚡ Lightning Network
-  - 🔐 隐私技术
-  - 🏦 钱包 & 自主保管
-  - 🔗 侧链 & Layer2
-  - 🛠️ 开发者工具
-  - 📈 网络数据统计
-
-  数据源：5个RSS，优先web_fetch，不足时web_search降级
-  输出格式：飞书文档 + 摘要消息
+description: "Generate monthly Bitcoin technical report covering protocol updates, Lightning Network, and privacy tech"
+metadata: { "openclaw": { "emoji": "₿" } }
 ---
 
 # 比特币技术月报生成 Skill
@@ -195,7 +183,7 @@ EOFSUM
 
 ```
 filePath: 摘要文件路径
-chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
+chatId: 'ou_0fa58dc0ea9bebec570346e829677da7'
 title: '₿ 比特币技术月报'
 maxLength: 1000
 ```

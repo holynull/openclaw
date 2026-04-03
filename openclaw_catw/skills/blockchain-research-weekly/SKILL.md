@@ -1,20 +1,7 @@
-## **⚠️ 执行模式：自动执行，无需确认！立即开始执行所有步骤。**
-
+---
 name: blockchain-research-weekly
-description: |
-🔬 区块链研究周报生成与发送
-
-汇总一周内区块链研究与投资动态，包含：
-
-- 💡 VC观点与市场分析
-- 📈 链上数据与合规分析
-- 💼 融资动态
-- 🔬 深度研究
-- 🌐 宏观环境
-
-数据源：8个RSS，优先web_fetch，不足时web_search降级
-输出格式：飞书文档 + 摘要消息
-
+description: "Generate weekly blockchain research report with VC insights, on-chain analytics, and funding updates"
+metadata: { "openclaw": { "emoji": "🔬" } }
 ---
 
 # 区块链研究周报生成 Skill
@@ -171,7 +158,7 @@ content: {完整报告Markdown内容，使用标准格式}
 
 ```
 filePath: "/tmp/blockchain-research-weekly-summary.txt"
-chatId: "oc_53d1a541f08d2d9f2e8c3c79a1f12fc3"
+chatId: "ou_0fa58dc0ea9bebec570346e829677da7"
 title: "🔬 区块链研究周报"
 maxLength: 1000
 ```

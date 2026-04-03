@@ -1,16 +1,7 @@
 ---
 name: blockchain-security-daily
-description: |
-  🛡️ 区块链安全日报生成与发送
-
-  自动监测区块链安全事件并生成日报，包含：
-  - 🚨 高危事件（黑客攻击、协议漏洞）
-  - ⚠️ 中危事件
-  - 📋 审计发现
-  - 🔐 安全建议
-
-  数据源：7家权威安全机构RSS，优先使用 web_fetch
-  输出格式：飞书文档 + 摘要消息
+description: "Monitor blockchain security incidents and generate daily security report with RSS feeds and search"
+metadata: { "openclaw": { "emoji": "🛡️" } }
 ---
 
 # 区块链安全日报生成 Skill
@@ -157,7 +148,7 @@ EOFSUM
 
 ```
 filePath: 摘要文件路径
-chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
+chatId: 'ou_0fa58dc0ea9bebec570346e829677da7'
 title: '🛡️ 区块链安全日报'
 maxLength: 1000
 ```

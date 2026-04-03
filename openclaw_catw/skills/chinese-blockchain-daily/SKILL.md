@@ -1,17 +1,7 @@
 ---
 name: chinese-blockchain-daily
-description: |
-  📰 中文区块链日报生成与发送
-
-  自动生成中文区块链日报并发送到飞书群，包含：
-  - 🔥 重大事件（≥3条）
-  - 💰 融资项目（≥2条）
-  - 📊 市场动态（≥3条）
-  - 🏛️ 监管动态
-  - 🛡️ 安全警示
-
-  数据源策略：优先使用 web_fetch（免费RSS），仅在失败时降级到 web_search
-  输出格式：飞书文档 + 摘要消息
+description: "Generate and send Chinese blockchain daily report with news collection, Feishu doc creation, and message delivery"
+metadata: { "openclaw": { "emoji": "📰" } }
 ---
 
 # 中文区块链日报生成 Skill
@@ -183,7 +173,7 @@ EOFSUM
 
 ```
 filePath: 摘要文件路径
-chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
+chatId: 'ou_0fa58dc0ea9bebec570346e829677da7'
 title: '📰 中文区块链日报'
 maxLength: 1000
 ```
