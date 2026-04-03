@@ -1,92 +1,68 @@
 ---
 name: chinese-blockchain-daily
-description: "Generate and send Chinese blockchain daily report with news collection, Feishu doc creation, and message delivery"
+description: "Generate Chinese blockchain daily report. Use when asked to create blockchain news summary, crypto daily report, 区块链日报, or blockchain updates. Collects news from RSS/search, creates Feishu document, sends to specified user."
 metadata: { "openclaw": { "emoji": "📰" } }
 ---
 
 # 中文区块链日报生成 Skill
 
-## 任务目标
+## 执行流程（3步）
 
-生成中文区块链日报并发送到飞书群，包含最少15条新闻，覆盖重大事件、融资、市场、监管、安全等多个维度。
+### 步骤1：收集新闻（RSS优先）
 
-## 1️⃣ 数据源策略（降级方案）
+- 用web_fetch获取RSS（chainfeeds.xyz, panewslab 2个源）
+- **立即从结果中提取15-20条新闻**（标题、简述、URL），**丢弃原始XML**
+- 如果不足15条，补充web_search
 
-### 优先方案（web_fetch，免费）
+### 步骤2：创建并写入飞书文档
 
-使用 `web_fetch` 工具获取以下RSS源：
+- feishu_doc create → 获得document_id
+- feishu_doc write → 写入Markdown报告（分类：🔥重大、💰融资、📊市场）
+
+### 步骤3：发送消息
+
+- 调用send_feishu_file_content
+- chatId: ou_0fa58dc0ea9bebec570346e829677da7
+- 内容：飞书文档URL摘要
+
+---
+
+## RSS数据源（优先）
 
 - https://www.chainfeeds.xyz/rss
 - https://www.panewslab.com/zh/rss/foryou.xml
 - https://www.panewslab.com/zh/rss/newsflash.xml
 
-### 降级方案（仅当web_fetch全部失败或提取新闻<10条时）
+## 搜索关键词（降级）
 
-使用 `web_search` 工具多次搜索不同关键词组合：
+web_search freshness="day"：
 
-**基础搜索**（每个关键词 freshness="day"）：
+- "区块链" (count=10)
+- "加密货币 融资" (count=5)
+- "比特币 以太坊" (count=5)
+- "Web3 项目" (count=5)
+- "NFT DeFi" (count=5)
 
-- "区块链" (count=10) - 行业综合新闻
-- "加密货币 融资" (count=5) - 融资动态
-- "比特币 以太坊" (count=5) - 主流币种新闻
-- "Web3 项目" (count=5) - Web3生态
-- "区块链 监管" (count=5) - 监管政策
-- "加密货币 安全 黑客" (count=5) - 安全事件
-
-**补充搜索**（当基础搜索结果<15条时继续）：
-
-- "NFT 市场" (count=5) - NFT动态
-- "DeFi 协议" (count=5) - DeFi生态
-- "Layer2 扩容" (count=5) - 扩容方案
-- "Web3 游戏" (count=3) - 链游动态
-- "元宇宙 区块链" (count=3) - 元宇宙应用
-
-**质量要求**：
-
-- 优先选择权威媒体、官方公告、知名项目的内容
-- 宁可多不可少，与区块链相关的都保留
-- 每条包含：标题、简述（30-50字）、完整URL
-
-## 2️⃣ 内容要求（必须满足，宁可多不可少）
-
-- **最少15条新闻**（🔥重大事件≥3条、💰融资≥2条、📊市场≥3条、其他类型各≥2条）
-- 每条新闻包含：标题、简述（30-50字）、**完整URL**
-- **⚠️ 重要：不要过度过滤！只要与区块链/加密货币相关，都应保留**
-- 允许包含：项目更新、技术文章、市场分析、行业动态、教育内容
-- 仅排除：完全无关内容、纯广告
-- 如果web_search结果<15条，继续添加新关键词搜索（如"NFT" "DeFi" "Web3游戏" "元宇宙"）
-
-## 3️⃣ 报告格式（飞书文档Markdown）
+## 飞书文档格式
 
 ```markdown
 # 📰 中文区块链日报 | {日期}
 
----
+## 🔥 重大事件
 
-## 🔥 重大事件 (N条)
+### 标题
 
-### 标题1
+📄 简述（30-50字）  
+🔗 [查看详情](URL)
 
-📄 简述内容（重点突出，30-50字）  
-🔗 [查看详情](完整URL)
+## 💰 融资与项目
 
-### 标题2
-
-📄 简述内容  
-🔗 [查看详情](完整URL)
-
----
-
-## 💰 融资与项目 (N条)
-
-### 项目名 - 融资$XXX万
+### 项目名 - 融资金额
 
 📄 简述  
 🔗 [详情](URL)
 
----
-
-## 📊 市场与技术 (N条)
+## 📊 市场与技术
 
 ### 标题
 
@@ -95,91 +71,11 @@ metadata: { "openclaw": { "emoji": "📰" } }
 
 ---
 
-## 🏛️ 监管动态
-
-（如有内容时才显示此节）
-
----
-
-## 🛡️ 安全警示
-
-（如有内容时才显示此节）
-
----
-
-**📊 今日统计**：共X条要闻 | 数据源：Y家
+**📊 今日统计**：共X条 | 数据源：Y家
 ```
 
-### 格式要求
+## 工具调用顺序
 
-- 使用标准Markdown语法（# ## ### 标题，- 列表）
-- 每条新闻用 ### 三级标题
-- 简述和链接各占一行
-- 标题不要加粗符号 \*\*，直接使用 ### 即可
-- 链接必须是完整URL，格式：[文字](URL)
-
-## 4️⃣ 保存并发送
-
-### ⚠️ 重要：必须严格按顺序执行，不可并行
-
-### 步骤1：创建飞书文档
-
-使用 `feishu_doc` 工具创建文档：
-
-```
-action: 'create'
-title: '📰 中文区块链日报 | {日期}'
-grant_to_requester: true
-```
-
-**等待步骤1完成，记录返回的 document_id**
-
-### 步骤2：写入报告内容
-
-**必须等步骤1成功后才能执行！** 使用步骤1返回的真实 `document_id`：
-
-```
-action: 'write'
-doc_token: {步骤1返回的实际document_id，例如 "Qpdrds7zLouAqUx8WnBjw6Wapaf"}
-content: {完整日报Markdown内容，使用上述格式}
-```
-
-**注意：doc_token 必须是步骤1返回结果中的 document_id，不能使用占位符！**
-
-### 步骤3：生成摘要并发送到群
-
-**必须等步骤1和步骤2都成功后才能执行！**
-
-首先使用 `bash` 工具创建摘要文件，**使用步骤1返回的真实文档URL**：
-
-```bash
-SUMMARY_FILE="/tmp/daily-summary-$(date +%Y%m%d).txt"
-DOC_URL="{步骤1返回的实际url，例如 https://feishu.cn/docx/Qpdrds7zLouAqUx8WnBjw6Wapaf}"
-
-cat > "$SUMMARY_FILE" << EOFSUM
-📊 今日要闻：{X}条
-• 🔥 重大事件：{N}条
-• 💰 融资项目：{N}条
-• 📊 市场动态：{N}条
-
-📄 完整报告文档：
-$DOC_URL
-
-数据源：{Y}家
-EOFSUM
-```
-
-然后使用 `send_feishu_file_content` 工具：
-
-```
-filePath: 摘要文件路径
-chatId: 'ou_0fa58dc0ea9bebec570346e829677da7'
-title: '📰 中文区块链日报'
-maxLength: 1000
-```
-
-## ⚠️ 注意事项
-
-1. 所有步骤必须成功完成
-2. 如果新闻数<15条，继续搜索更多关键词
-3. 确保文档中所有URL完整可点击
+1. feishu_doc create → 获得document_id和url
+2. feishu_doc write → 写入content到document_id
+3. send_feishu_file_content → 发送文档url摘要到ou_0fa58dc0ea9bebec570346e829677da7

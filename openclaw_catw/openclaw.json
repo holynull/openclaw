@@ -627,12 +627,15 @@
     }
   },
   "plugins": {
-    "allow": ["blockchain-tools", "telegram", "feishu", "feishu-messaging"],
+    "allow": ["blockchain-tools", "telegram", "feishu", "feishu-messaging", "rss-fetch"],
     "entries": {
       "blockchain-tools": {
         "enabled": true
       },
       "feishu": {
+        "enabled": true
+      },
+      "rss-fetch": {
         "enabled": true
       }
     }

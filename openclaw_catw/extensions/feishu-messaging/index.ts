@@ -155,6 +155,62 @@ async function sendFeishuCardMessage(
   return result.data.message_id;
 }
 
+/**
+ * Send Markdown message as interactive card to Feishu user or chat
+ */
+async function sendFeishuMarkdownMessage(
+  accessToken: string,
+  targetId: string,
+  receiveIdType: string,
+  title: string,
+  markdownContent: string,
+): Promise<string> {
+  const url = `https://open.larksuite.com/open-apis/im/v1/messages?receive_id_type=${receiveIdType}`;
+
+  // Build card with markdown content
+  const card = {
+    config: {
+      wide_screen_mode: true,
+    },
+    header: {
+      template: "blue",
+      title: {
+        tag: "plain_text",
+        content: title,
+      },
+    },
+    elements: [
+      {
+        tag: "div",
+        text: {
+          tag: "lark_md",
+          content: markdownContent,
+        },
+      },
+    ],
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      receive_id: targetId,
+      msg_type: "interactive",
+      content: JSON.stringify(card),
+    }),
+  });
+
+  const result = await response.json();
+  if (result.code !== 0) {
+    throw new Error(`Failed to send markdown message: ${result.msg}`);
+  }
+
+  return result.data.message_id;
+}
+
 export default function (api: any) {
   // ==================== Feishu Messaging Tools ====================
 
@@ -267,10 +323,11 @@ export default function (api: any) {
   api.registerTool({
     name: "send_feishu_file_content",
     description:
-      "Read content from a file and send it to Feishu chat. Useful for sending reports. Requires FEISHU_APP_ID and FEISHU_APP_SECRET environment variables.",
+      "Send message to Feishu chat. Can send local file content, URL link, or direct text content. Supports both plain text and Markdown rendering. Useful for sending reports. Requires FEISHU_APP_ID and FEISHU_APP_SECRET environment variables.",
     parameters: Type.Object({
       filePath: Type.String({
-        description: "Path to the file to read and send",
+        description:
+          "File path, URL (https://...), or direct text content to send. If starts with https://, treated as URL link. Otherwise if file exists, reads file content. If file doesn't exist, sends as direct text.",
       }),
       chatId: Type.String({
         description: "Feishu chat ID (oc_xxx for group chat) or user ID (ou_xxx for private chat)",
@@ -280,16 +337,24 @@ export default function (api: any) {
           description: "Optional: Title/header for the message",
         }),
       ),
+      useMarkdown: Type.Optional(
+        Type.Boolean({
+          description:
+            "Optional: If true, renders content as Markdown in interactive card. If false, sends as plain text. Default: auto-detect based on content (checks for **, ##, [](url), etc.)",
+          default: undefined,
+        }),
+      ),
       maxLength: Type.Optional(
         Type.Number({
-          description: "Optional: Maximum characters to read from file (default: 2800)",
-          default: 2800,
+          description:
+            "Optional: Maximum characters to read from file (default: 10000 for markdown, 2800 for plain text)",
+          default: undefined,
         }),
       ),
     }),
     async execute(_id: any, params: any) {
       try {
-        const { filePath, chatId, title, maxLength = 2800 } = params;
+        const { filePath, chatId, title, useMarkdown, maxLength } = params;
 
         // Validate chat ID and determine receive type
         let receiveIdType: string;
@@ -315,41 +380,92 @@ export default function (api: any) {
           };
         }
 
-        // Read file content
+        // Determine content type and get message content
         let fileContent: string;
-        try {
-          const fullContent = await readFile(filePath, "utf-8");
-          // Limit content length
-          fileContent = fullContent.slice(0, maxLength);
-          if (fullContent.length > maxLength) {
-            fileContent += `\n\n[Content truncated. Full length: ${fullContent.length} chars]`;
+        let contentType: string;
+
+        if (filePath.startsWith("https://") || filePath.startsWith("http://")) {
+          // URL link - send as clickable link
+          contentType = "url";
+          fileContent = filePath;
+        } else {
+          // Try to read as file, if fails treat as direct text
+          try {
+            const fullContent = await readFile(filePath, "utf-8");
+            contentType = "file";
+            // Limit content length
+            const defaultMaxLength = useMarkdown !== false ? 10000 : 2800;
+            const actualMaxLength = maxLength !== undefined ? maxLength : defaultMaxLength;
+            fileContent = fullContent.slice(0, actualMaxLength);
+            if (fullContent.length > actualMaxLength) {
+              fileContent += `\n\n[Content truncated. Full length: ${fullContent.length} chars]`;
+            }
+          } catch (error: any) {
+            // If file doesn't exist, treat as direct text content
+            contentType = "text";
+            const defaultMaxLength = useMarkdown !== false ? 10000 : 2800;
+            const actualMaxLength = maxLength !== undefined ? maxLength : defaultMaxLength;
+            fileContent = filePath.slice(0, actualMaxLength);
           }
-        } catch (error: any) {
-          return {
-            success: false,
-            error: `Failed to read file ${filePath}: ${error.message}`,
-          };
         }
 
-        // Build message with optional title
-        const messageTitle = title || `📊 Report from ${filePath}`;
-        const timestamp = new Date().toISOString().split("T")[0];
-        const fullMessage = `${messageTitle}\n📅 ${timestamp}\n\n${fileContent}`;
+        // Auto-detect markdown if not explicitly specified
+        let shouldUseMarkdown = useMarkdown;
+        if (shouldUseMarkdown === undefined) {
+          // Check for common markdown patterns
+          const markdownPatterns = [
+            /\*\*.+\*\*/, // **bold**
+            /##+ /, // ## headers
+            /^\* /m, // * bullet lists
+            /^\d+\. /m, // 1. numbered lists
+            /\[.+\]\(.+\)/, // [text](url) links
+            /^> /m, // > blockquotes
+          ];
+          shouldUseMarkdown = markdownPatterns.some((pattern) => pattern.test(fileContent));
+        }
 
         // Get access token
         const accessToken = await getFeishuAccessToken(appId, appSecret);
 
-        // Send message
-        const messageId = await sendFeishuMessage(accessToken, chatId, receiveIdType, fullMessage);
+        let messageId: string;
+        const messageTitle = title || (contentType === "url" ? "📄 文档链接" : `📊 Report`);
+
+        if (shouldUseMarkdown) {
+          // Send as Markdown card message
+          const timestamp = new Date().toISOString().split("T")[0];
+          const markdownContent =
+            contentType === "url"
+              ? `📅 ${timestamp}\n\n🔗 [${fileContent}](${fileContent})`
+              : `📅 ${timestamp}\n\n${fileContent}`;
+
+          messageId = await sendFeishuMarkdownMessage(
+            accessToken,
+            chatId,
+            receiveIdType,
+            messageTitle,
+            markdownContent,
+          );
+        } else {
+          // Send as plain text message
+          const timestamp = new Date().toISOString().split("T")[0];
+          const fullMessage =
+            contentType === "url"
+              ? `${messageTitle}\n📅 ${timestamp}\n\n🔗 ${fileContent}`
+              : `${messageTitle}\n📅 ${timestamp}\n\n${fileContent}`;
+
+          messageId = await sendFeishuMessage(accessToken, chatId, receiveIdType, fullMessage);
+        }
 
         return {
           success: true,
           chatId,
           receiveIdType,
           messageId,
+          contentType,
+          messageFormat: shouldUseMarkdown ? "markdown" : "plain_text",
           filePath,
           contentLength: fileContent.length,
-          message: `✅ File content sent successfully to ${receiveIdType === "open_id" ? "user" : "chat"}`,
+          message: `✅ ${contentType === "url" ? "Link" : "Content"} sent successfully to ${receiveIdType === "open_id" ? "user" : "chat"} (format: ${shouldUseMarkdown ? "markdown" : "plain text"})`,
         };
       } catch (error: any) {
         return {

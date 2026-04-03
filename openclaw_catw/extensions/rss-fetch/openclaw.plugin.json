@@ -1,0 +1,10 @@
+{
+  "id": "rss-fetch",
+  "name": "RSS Fetch",
+  "description": "RSS feed fetcher and parser tool",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

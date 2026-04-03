@@ -15,7 +15,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 chinese-blockchain-daily skill 生成中文区块链日报"
+        "message": "Read cron_messages/chinese-blockchain-daily.md and execute all steps"
       },
       "delivery": {
         "mode": "none"
@@ -46,7 +46,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 blockchain-security-daily skill 生成区块链安全日报"
+        "message": "Read cron_messages/blockchain-security-daily.md and execute all steps"
       },
       "delivery": {
         "mode": "none"
@@ -77,7 +77,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 blockchain-project-weekly skill 生成区块链项目周报"
+        "message": "Read cron_messages/blockchain-project-weekly.md and execute all steps"
       },
       "delivery": {
         "mode": "none"
@@ -100,7 +100,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 blockchain-research-weekly skill 生成区块链研究周报"
+        "message": "Read cron_messages/blockchain-research-weekly.md and execute all steps"
       },
       "delivery": {
         "mode": "none"
@@ -123,7 +123,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 web3-developer-biweekly skill 生成Web3开发者双周报"
+        "message": "Read cron_messages/web3-developer-biweekly.md and execute all steps"
       },
       "delivery": {
         "mode": "none"
@@ -146,7 +146,7 @@
       "wakeMode": "now",
       "payload": {
         "kind": "agentTurn",
-        "message": "使用 bitcoin-tech-monthly skill 生成比特币技术月报"
+        "message": "Read cron_messages/bitcoin-tech-monthly.md and execute all steps"
       },
       "delivery": {
         "mode": "none"

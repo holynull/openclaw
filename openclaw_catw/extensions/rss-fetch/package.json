@@ -1,0 +1,14 @@
+{
+  "name": "@openclaw/rss-fetch",
+  "version": "1.0.0",
+  "description": "RSS feed fetcher and parser tool",
+  "type": "module",
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.48"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
