@@ -97,7 +97,9 @@ fetch_rss_news({
 参数：
 
 - filePath: {步骤2生成的完整Markdown字符串}
-- chatId: 'ou_0fa58dc0ea9bebec570346e829677da7'
+- chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
+- title: '🛡️ 区块链安全日报'
+- **useMarkdown: true**
 - title: '🛡️ 区块链安全日报'
 - **useMarkdown: true**
 
