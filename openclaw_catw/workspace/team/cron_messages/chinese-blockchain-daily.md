@@ -5,8 +5,8 @@
 ### 1. 收集新闻
 
 - 调用fetch_rss_news工具（类似feishu_doc的调用方式）：
-  - sources: ["https://www.chainfeeds.xyz/rss", "https://www.panewslab.com/zh/rss/foryou.xml", "https://www.panewslab.com/zh/rss/newsflash.xml"]
-  - maxItemsPerSource: 5
+  - sources: ["https://www.chainfeeds.xyz/rss", "https://www.panewslab.com/zh/rss/foryou.xml", "https://www.panewslab.com/zh/rss/newsflash.xml", "https://decrypt.co/feed", "https://blockworks.co/feed/"]
+  - maxItemsPerSource: 2
 
 示例调用：
 
@@ -18,7 +18,7 @@ fetch_rss_news({
 ```
 
 - 如果不可用，使用web_search代替
-- **目标获取15条以上新闻，如果不足15条则增加maxItemsPerSource重试**
+- **无论获取多少条都要继续生成报告，不要询问或等待**
 
 ### 2. 生成完整Markdown报告
 
