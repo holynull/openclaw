@@ -154,6 +154,27 @@
       "state": {
         "nextRunAtMs": 1777600800000
       }
+    },
+    {
+      "id": "defi-ecosystem-weekly",
+      "name": "DeFi生态周报",
+      "enabled": true,
+      "agentId": "team_bot",
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 10 * * 3",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Read cron_messages/defi-ecosystem-weekly.md and execute all steps"
+      },
+      "delivery": {
+        "mode": "none"
+      },
+      "state": {}
     }
   ]
 }
