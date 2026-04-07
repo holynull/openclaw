@@ -20,7 +20,7 @@ fetch_rss_news({
 - 如果不可用，使用web_search代替
 - **无论获取多少条都要继续生成报告，不要询问或等待**
 
-### 2. 生成完整Markdown报告
+### 2. 生成完整Markdown报告并写入临时文件
 
 **重要执行规则：**
 
@@ -34,6 +34,7 @@ fetch_rss_news({
    - 空行
 4. **禁止使用省略表达**：不允许出现"..."、"继续编号"、"扩展到"、"other X summarized"
 5. **实际生成过程**：不要在脑海中计划，直接把每条都写出来
+6. **生成后立即写入临时文件**：调用write工具，路径为 `/tmp/blockchain-research-weekly-report.md`
 
 报告格式（lark_md支持的格式，不支持## ### 标题）：
 
@@ -155,21 +156,24 @@ fetch_rss_news({
 - lark_md 不支持：## 标题、### 标题、列表、代码块
 - 用 **【编号】标题** 和空行来组织结构
 
-### 3. 发送Markdown报告
+### 3. 从临时文件读取并发送
 
-立即调用send_feishu_file_content工具，参数：
+**执行流程：**
 
-- filePath: {步骤2生成的完整Markdown字符串}（包含\*\*、##、[](url)等Markdown格式）
-- chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
-- title: '� 区块链研究与投资周报'
-- **useMarkdown: true** （关键！启用Markdown渲染）
+1. 调用read工具，读取 `/tmp/blockchain-research-weekly-report.md` 文件内容
+2. 立即调用send_feishu_file_content工具发送，参数：
+   - filePath: {从临时文件读取的完整Markdown内容}
+   - chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
+   - title: '📊 区块链研究与投资周报'
+   - **useMarkdown: true**
 
-（filePath是Markdown文本内容本身，不是文件路径或URL）
+**禁止在调用send之前输出报告内容或回复"报告已生成"！**
 
 ## ⚠️ 重要提示
 
 - **必须使用fetch_rss_news工具**（工具在服务端解析RSS，只返回结构化数据）
 - **必须设置 useMarkdown: true 参数**（启用lark_md渲染）
-- **必须执行完全部3个步骤才算完成**
+- **必须执行完全部3个步骤才算完成**（缺少步骤3=任务失败）
+- **步骤2必须写入临时文件，步骤3必须从临时文件读取后发送**
 - **步骤2生成的Markdown必须包含fetch_rss_news返回的所有新闻条目**
 - **不要精选或筛选，把items数组里的每一条都按顺序编号列出**

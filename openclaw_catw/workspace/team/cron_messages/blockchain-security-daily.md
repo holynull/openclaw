@@ -20,20 +20,21 @@ fetch_rss_news({
 - 如果不可用，使用web_search代替
 - **无论获取多少条都要继续生成报告，不要询问或等待**
 
-### 2. 生成完整Markdown报告
+### 2. 生成完整Markdown报告并写入临时文件
 
 **重要执行规则：**
 
 1. **lark_md格式限制！** 只支持 **粗体**、[链接](url)，不支持 ## 标题
 2. **使用for循环遍历items数组**：`for (let i = 0; i < items.length; i++)`
 3. **每条新闻格式**：
-   - `**【${i+1}】${item.title}**` (粗体)
+   - `**【${i+1}】${item.title}**` (粗体，不用##)
    - `${item.description}`
    - `[🔗 查看详情](${item.link})`
    - `⏰ ${item.pubDate}`
    - 空行
 4. **禁止使用省略表达**：不允许出现"..."、"继续编号"、"扩展到"、"other X summarized"
 5. **实际生成过程**：不要在脑海中计划，直接把每条都写出来
+6. **生成后立即写入临时文件**：调用write工具，路径为 `/tmp/blockchain-security-daily-report.md`
 
 报告格式（lark_md支持的格式）：
 
@@ -90,24 +91,24 @@ fetch_rss_news({
 - lark_md 支持：**粗体**、[链接](url)、换行
 - lark_md 不支持：## 标题、### 标题、列表、代码块
 
-### 3. 发送Markdown报告（必须调用工具）
+### 3. 从临时文件读取并发送
 
-**必须立即调用send_feishu_file_content工具**，不要只说"准备发送"或"即将发送"！
+**执行流程：**
 
-参数：
+1. 调用read工具，读取 `/tmp/blockchain-security-daily-report.md` 文件内容
+2. 立即调用send_feishu_file_content工具发送，参数：
+   - filePath: {从临时文件读取的完整Markdown内容}
+   - chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
+   - title: '🛡️ 区块链安全日报'
+   - **useMarkdown: true**
 
-- filePath: {步骤2生成的完整Markdown字符串}
-- chatId: 'oc_53d1a541f08d2d9f2e8c3c79a1f12fc3'
-- title: '🛡️ 区块链安全日报'
-- **useMarkdown: true**
-- title: '🛡️ 区块链安全日报'
-- **useMarkdown: true**
-
-**关键：不要只输出Markdown，必须调用send_feishu_file_content工具！** （关键！启用Markdown渲染）
+**禁止在调用send之前输出报告内容或回复"报告已生成"！**
 
 ## ⚠️ 重要提示
 
-- **优先使用fetch_rss_news工具**
-- **必须设置 useMarkdown: true 参数**
-- **必须执行完全部3个步骤才算完成**
-- **所有新闻条目必须全部列出，不要省略**
+- **必须使用fetch_rss_news工具**（工具在服务端解析RSS，只返回结构化数据）
+- **必须设置 useMarkdown: true 参数**（启用lark_md渲染）
+- **必须执行完全部3个步骤才算完成**（缺少步骤3=任务失败）
+- **步骤2必须写入临时文件，步骤3必须从临时文件读取后发送**
+- **步骤2生成的Markdown必须包含fetch_rss_news返回的所有新闻条目**
+- **不要精选或筛选，把items数组里的每一条都按顺序编号列出**
