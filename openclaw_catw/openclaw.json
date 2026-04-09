@@ -269,6 +269,8 @@
           "profile": "full",
           "deny": ["write", "edit", "apply_patch"],
           "alsoAllow": [
+            "fetch_rss_news",
+            "send_feishu_file_content",
             "sessions_spawn",
             "subagents",
             "eth_get_balance",
