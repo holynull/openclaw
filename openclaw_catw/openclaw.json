@@ -271,6 +271,7 @@
           "alsoAllow": [
             "fetch_rss_news",
             "send_feishu_file_content",
+            "send_feishu_reminder",
             "sessions_spawn",
             "subagents",
             "eth_get_balance",
